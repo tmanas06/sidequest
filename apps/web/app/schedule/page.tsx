@@ -25,6 +25,7 @@ import {
   getLumaConnection,
   disconnectLuma,
   setActiveUserId,
+  syncUserLuma,
   type LumaConnectionState,
   type ApprovedLumaTicket,
 } from '@/lib/luma-storage'
@@ -140,19 +141,16 @@ export default function SchedulePage() {
     db.auth.getUser().then(({ data }) => {
       const user = data?.user || null
       setCurrentUser(user)
-      setActiveUserId(user?.id || null)
-      setLumaState(getLumaConnection(user?.id || null))
+      setLumaState(syncUserLuma(user))
     }).catch(() => {
       setCurrentUser(null)
-      setActiveUserId(null)
-      setLumaState(getLumaConnection(null))
+      setLumaState(syncUserLuma(null))
     })
 
     const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
       const user = session?.user || null
       setCurrentUser(user)
-      setActiveUserId(user?.id || null)
-      setLumaState(getLumaConnection(user?.id || null))
+      setLumaState(syncUserLuma(user))
     })
 
     return () => {

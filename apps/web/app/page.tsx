@@ -18,7 +18,7 @@ import {
 import { EventCard, EventCardSkeleton } from '@/components/event-card'
 import type { Database, EventCategory, BlockchainEcosystem } from '@/lib/supabase/database.types'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
-import { getLumaConnection, setActiveUserId, type LumaConnectionState } from '@/lib/luma-storage'
+import { getLumaConnection, setActiveUserId, syncUserLuma, type LumaConnectionState } from '@/lib/luma-storage'
 import { createClient } from '@/lib/supabase/client'
 
 type SideQuestEvent = Database['public']['Tables']['events']['Row']
@@ -135,19 +135,16 @@ export default function DiscoverPage() {
     db.auth.getUser().then(({ data }) => {
       const user = data?.user || null
       setCurrentUser(user)
-      setActiveUserId(user?.id || null)
-      setLumaState(getLumaConnection(user?.id || null))
+      setLumaState(syncUserLuma(user))
     }).catch(() => {
       setCurrentUser(null)
-      setActiveUserId(null)
-      setLumaState(getLumaConnection(null))
+      setLumaState(syncUserLuma(null))
     })
 
     const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
       const user = session?.user || null
       setCurrentUser(user)
-      setActiveUserId(user?.id || null)
-      setLumaState(getLumaConnection(user?.id || null))
+      setLumaState(syncUserLuma(user))
     })
 
     return () => {

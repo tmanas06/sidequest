@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Compass, CalendarDays, Users, User, Ticket, LogOut } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { LumaConnectModal } from './luma-connect-modal'
-import { getLumaConnection, setActiveUserId, type LumaConnectionState } from '@/lib/luma-storage'
+import { getLumaConnection, setActiveUserId, syncUserLuma, type LumaConnectionState } from '@/lib/luma-storage'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -38,19 +38,16 @@ export function Navigation() {
     db.auth.getUser().then(({ data }) => {
       const user = data?.user || null
       setCurrentUser(user)
-      setActiveUserId(user?.id || null)
-      setLumaState(getLumaConnection(user?.id || null))
+      setLumaState(syncUserLuma(user))
     }).catch(() => {
       setCurrentUser(null)
-      setActiveUserId(null)
-      setLumaState(getLumaConnection(null))
+      setLumaState(syncUserLuma(null))
     })
 
     const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
       const user = session?.user || null
       setCurrentUser(user)
-      setActiveUserId(user?.id || null)
-      setLumaState(getLumaConnection(user?.id || null))
+      setLumaState(syncUserLuma(user))
     })
 
     return () => {

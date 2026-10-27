@@ -48,21 +48,28 @@ export function setActiveUserId(userId: string | null): void {
   try {
     if (userId) {
       localStorage.setItem(ACTIVE_USER_KEY, userId)
-      // If legacy unpartitioned key exists, migrate once to this first user if they don't have their own partition yet
-      const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY)
       const userKey = `sidequest_luma_conn_${userId}`
-      if (legacyRaw && !localStorage.getItem(userKey)) {
-        try {
-          const parsed = JSON.parse(legacyRaw)
-          localStorage.setItem(userKey, JSON.stringify({ ...parsed, userId }))
-        } catch {
-          // ignore parsing error
+      const existingUserConn = localStorage.getItem(userKey)
+
+      // If user doesn't have local data yet, check guest or legacy storage and migrate it
+      if (!existingUserConn) {
+        const guestKey = 'sidequest_luma_conn_guest'
+        const candidateRaw = localStorage.getItem(guestKey) || localStorage.getItem(LEGACY_STORAGE_KEY)
+        if (candidateRaw) {
+          try {
+            const parsed = JSON.parse(candidateRaw)
+            if (parsed.isConnected && (parsed.events?.length > 0 || parsed.calendarUrl)) {
+              localStorage.setItem(userKey, JSON.stringify({ ...parsed, userId }))
+            }
+          } catch {
+            // ignore parsing error
+          }
         }
       }
     } else {
       localStorage.removeItem(ACTIVE_USER_KEY)
     }
-    // Delete legacy global key so other accounts or guests NEVER see this data
+    // Delete legacy global key to prevent leaks
     localStorage.removeItem(LEGACY_STORAGE_KEY)
   } catch (err) {
     console.warn('Error setting active user ID:', err)
@@ -112,6 +119,20 @@ export function saveLumaConnection(state: LumaConnectionState, userId?: string |
     // Also remove legacy key to prevent leaks
     localStorage.removeItem(LEGACY_STORAGE_KEY)
     window.dispatchEvent(new CustomEvent('sidequest_luma_sync', { detail: stateToSave }))
+
+    // Persist to Supabase Auth user_metadata so user never has to reconnect across devices/logins
+    if (resolvedId && stateToSave.isConnected) {
+      import('@/lib/supabase/client')
+        .then(({ createClient }) => {
+          const db = createClient()
+          db.auth.updateUser({
+            data: {
+              luma_connection: stateToSave,
+            },
+          }).catch(() => {})
+        })
+        .catch(() => {})
+    }
   } catch (err) {
     console.error('Failed to save Luma connection:', err)
   }
@@ -131,9 +152,64 @@ export function disconnectLuma(userId?: string | null): void {
       userId: resolvedId,
     }
     window.dispatchEvent(new CustomEvent('sidequest_luma_sync', { detail: emptyState }))
+
+    // Remove from Supabase Auth user_metadata
+    if (resolvedId) {
+      import('@/lib/supabase/client')
+        .then(({ createClient }) => {
+          const db = createClient()
+          db.auth.updateUser({
+            data: {
+              luma_connection: null,
+            },
+          }).catch(() => {})
+        })
+        .catch(() => {})
+    }
   } catch (err) {
     console.error('Failed to disconnect Luma:', err)
   }
+}
+
+/**
+ * Automatically syncs & restores Luma connection between Supabase cloud user_metadata and local storage
+ * Guarantees that once a user has synced, they are NEVER asked to re-sync when logging back in.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function syncUserLuma(user: any): LumaConnectionState {
+  if (!user?.id) {
+    setActiveUserId(null)
+    return getLumaConnection(null)
+  }
+
+  setActiveUserId(user.id)
+  const local = getLumaConnection(user.id)
+
+  // 1. If local already has valid connected tickets, ensure cloud metadata is up-to-date
+  if (local.isConnected && local.events.length > 0) {
+    const cloudConn = user.user_metadata?.luma_connection
+    if (!cloudConn || !cloudConn.isConnected || cloudConn.events?.length !== local.events.length) {
+      saveLumaConnection(local, user.id)
+    }
+    return local
+  }
+
+  // 2. If local is empty, but cloud has previously saved Luma connection, restore it!
+  const cloudConn = user.user_metadata?.luma_connection
+  if (cloudConn && cloudConn.isConnected && Array.isArray(cloudConn.events) && cloudConn.events.length > 0) {
+    const restored: LumaConnectionState = {
+      ...cloudConn,
+      userId: user.id,
+    }
+    const key = getLumaStorageKey(user.id)
+    try {
+      localStorage.setItem(key, JSON.stringify(restored))
+      window.dispatchEvent(new CustomEvent('sidequest_luma_sync', { detail: restored }))
+    } catch {}
+    return restored
+  }
+
+  return local
 }
 
 export function addCustomEvent(event: ApprovedLumaTicket, userId?: string | null): void {
