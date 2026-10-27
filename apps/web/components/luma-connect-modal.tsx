@@ -29,9 +29,10 @@ interface LumaConnectModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: (state: LumaConnectionState) => void
+  userId?: string | null
 }
 
-export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModalProps) {
+export function LumaConnectModal({ isOpen, onClose, onSuccess, userId }: LumaConnectModalProps) {
   const [calendarUrl, setCalendarUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,15 +43,14 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
     events: [],
   })
 
-
   useEffect(() => {
     if (isOpen) {
-      const current = getLumaConnection()
+      const current = getLumaConnection(userId)
       setConnection(current)
       if (current.calendarUrl) setCalendarUrl(current.calendarUrl)
       setError(null)
     }
-  }, [isOpen])
+  }, [isOpen, userId])
 
   if (!isOpen) return null
 
@@ -81,9 +81,10 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
         approvedCount: data.approvedCount || data.events?.length || 0,
         events: data.events || [],
         accountLabel: data.account || (useDemo ? 'Demo Attendee' : 'My Luma Account'),
+        userId: userId,
       }
 
-      saveLumaConnection(newState)
+      saveLumaConnection(newState, userId)
       setConnection(newState)
       if (onSuccess) onSuccess(newState)
     } catch (err) {
@@ -94,8 +95,8 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
   }
 
   const handleDisconnect = () => {
-    disconnectLuma()
-    setConnection({ isConnected: false, approvedCount: 0, events: [] })
+    disconnectLuma(userId)
+    setConnection({ isConnected: false, approvedCount: 0, events: [], userId })
     setCalendarUrl('')
   }
 

@@ -5,7 +5,8 @@ import { Search, SlidersHorizontal, X, Zap, ChevronDown, RotateCcw, ArrowUpDown,
 import { EventCard, EventCardSkeleton } from '@/components/event-card'
 import type { Database, EventCategory, BlockchainEcosystem } from '@/lib/supabase/database.types'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
-import { getLumaConnection, type LumaConnectionState } from '@/lib/luma-storage'
+import { getLumaConnection, setActiveUserId, type LumaConnectionState } from '@/lib/luma-storage'
+import { createClient } from '@/lib/supabase/client'
 
 
 type Event = Database['public']['Tables']['events']['Row']
@@ -156,6 +157,8 @@ export default function DiscoverPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [onlyApproved, setOnlyApproved] = useState(false)
   const [showLumaModal, setShowLumaModal] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [lumaState, setLumaState] = useState<LumaConnectionState>({
     isConnected: false,
     approvedCount: 0,
@@ -163,13 +166,35 @@ export default function DiscoverPage() {
   })
 
   useEffect(() => {
-    setLumaState(getLumaConnection())
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSync = (e: any) => {
       if (e?.detail) setLumaState(e.detail)
     }
     window.addEventListener('sidequest_luma_sync', handleSync)
-    return () => window.removeEventListener('sidequest_luma_sync', handleSync)
+
+    const db = createClient()
+    db.auth.getUser().then(({ data }) => {
+      const user = data?.user || null
+      setCurrentUser(user)
+      setActiveUserId(user?.id || null)
+      setLumaState(getLumaConnection(user?.id || null))
+    }).catch(() => {
+      setCurrentUser(null)
+      setActiveUserId(null)
+      setLumaState(getLumaConnection(null))
+    })
+
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user || null
+      setCurrentUser(user)
+      setActiveUserId(user?.id || null)
+      setLumaState(getLumaConnection(user?.id || null))
+    })
+
+    return () => {
+      window.removeEventListener('sidequest_luma_sync', handleSync)
+      subscription.unsubscribe()
+    }
   }, [])
 
 
@@ -945,6 +970,7 @@ export default function DiscoverPage() {
       {/* Luma Connect Modal */}
       <LumaConnectModal
         isOpen={showLumaModal}
+        userId={currentUser?.id}
         onClose={() => setShowLumaModal(false)}
         onSuccess={updated => setLumaState(updated)}
       />

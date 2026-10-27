@@ -9,8 +9,13 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabaseResponse = NextResponse.redirect(new URL(next, requestUrl.origin))
 
+    let url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tlqmmnfwefrvfxpxurci.supabase.co'
+    if (url.includes('tlqmmfwefrvfxpxurci')) {
+      url = url.replace('tlqmmfwefrvfxpxurci', 'tlqmmnfwefrvfxpxurci')
+    }
+
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      url,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
@@ -26,9 +31,15 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      console.error('OAuth exchange error:', error)
+      return NextResponse.redirect(
+        new URL(`/auth/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
+      )
+    }
     return supabaseResponse
   }
 
-  return NextResponse.redirect(new URL('/', requestUrl.origin))
+  return NextResponse.redirect(new URL(next, requestUrl.origin))
 }

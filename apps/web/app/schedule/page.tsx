@@ -24,9 +24,11 @@ import {
 import {
   getLumaConnection,
   disconnectLuma,
+  setActiveUserId,
   type LumaConnectionState,
   type ApprovedLumaTicket,
 } from '@/lib/luma-storage'
+import { createClient } from '@/lib/supabase/client'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
 import { ScheduleCalendarView } from '@/components/schedule-calendar-view'
 import { ScheduleDayGridView } from '@/components/schedule-day-grid-view'
@@ -117,6 +119,8 @@ function exportApprovedIcs(events: ScheduleEvent[]) {
 }
 
 export default function SchedulePage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [lumaState, setLumaState] = useState<LumaConnectionState>({
     isConnected: false,
     approvedCount: 0,
@@ -125,15 +129,36 @@ export default function SchedulePage() {
   const [showConnectModal, setShowConnectModal] = useState(false)
 
   useEffect(() => {
-    setLumaState(getLumaConnection())
-
     const handleSync = (e: Event) => {
       const custom = e as CustomEvent<LumaConnectionState>
       if (custom.detail) setLumaState(custom.detail)
     }
 
     window.addEventListener('sidequest_luma_sync', handleSync)
-    return () => window.removeEventListener('sidequest_luma_sync', handleSync)
+
+    const db = createClient()
+    db.auth.getUser().then(({ data }) => {
+      const user = data?.user || null
+      setCurrentUser(user)
+      setActiveUserId(user?.id || null)
+      setLumaState(getLumaConnection(user?.id || null))
+    }).catch(() => {
+      setCurrentUser(null)
+      setActiveUserId(null)
+      setLumaState(getLumaConnection(null))
+    })
+
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user || null
+      setCurrentUser(user)
+      setActiveUserId(user?.id || null)
+      setLumaState(getLumaConnection(user?.id || null))
+    })
+
+    return () => {
+      window.removeEventListener('sidequest_luma_sync', handleSync)
+      subscription.unsubscribe()
+    }
   }, [])
 
   // Format events for schedule view
@@ -349,7 +374,7 @@ export default function SchedulePage() {
               <span>Re-sync</span>
             </button>
             <button
-              onClick={() => disconnectLuma()}
+              onClick={() => disconnectLuma(currentUser?.id)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 font-semibold transition-colors"
             >
               <Unlink size={12} />
@@ -702,6 +727,7 @@ export default function SchedulePage() {
       {/* Luma Connect Modal */}
       <LumaConnectModal
         isOpen={showConnectModal}
+        userId={currentUser?.id}
         onClose={() => setShowConnectModal(false)}
         onSuccess={updated => setLumaState(updated)}
       />
@@ -710,7 +736,7 @@ export default function SchedulePage() {
       <AddCustomEventModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={() => setLumaState(getLumaConnection())}
+        onSuccess={() => setLumaState(getLumaConnection(currentUser?.id))}
       />
     </div>
   )

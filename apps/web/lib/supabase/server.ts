@@ -5,9 +5,13 @@ import type { Database } from './database.types'
 
 export async function createClient() {
   const cookieStore = await cookies()
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tlqmmnfwefrvfxpxurci.supabase.co'
+  if (url.includes('tlqmmfwefrvfxpxurci')) {
+    url = url.replace('tlqmmfwefrvfxpxurci', 'tlqmmnfwefrvfxpxurci')
+  }
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    url,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
@@ -30,8 +34,13 @@ export async function createClient() {
 
 /** Service-role client for ingestion — NEVER use on client side */
 export function createServiceClient() {
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tlqmmnfwefrvfxpxurci.supabase.co'
+  if (url.includes('tlqmmfwefrvfxpxurci')) {
+    url = url.replace('tlqmmfwefrvfxpxurci', 'tlqmmnfwefrvfxpxurci')
+  }
+
   return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    url,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
