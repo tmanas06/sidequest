@@ -379,7 +379,98 @@ async function run() {
     }
   }
 
-  const allEvents = Array.from(mergedMap.values());
+  const rawEvents = Array.from(mergedMap.values());
+
+  function normTitle(t) {
+    return (t || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function getTokens(t) {
+    return new Set(
+      normTitle(t)
+        .split(' ')
+        .filter(w => w.length > 1 && !['the', 'and', 'by', 'for', 'in', 'at', 'to', 'of', 'with'].includes(w))
+    );
+  }
+
+  function jaccard(setA, setB) {
+    let intersect = 0;
+    for (const item of setA) {
+      if (setB.has(item)) intersect++;
+    }
+    const union = setA.size + setB.size - intersect;
+    return union === 0 ? 0 : intersect / union;
+  }
+
+  function cleanUrl(u) {
+    if (!u) return '';
+    let s = u.replace(/^https?:\/\/luma\.com\/(https?:\/\/)?/, '$1');
+    return s.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('?')[0].replace(/\/+$/, '');
+  }
+
+  function areDuplicates(a, b) {
+    const normA = normTitle(a.title);
+    const normB = normTitle(b.title);
+
+    const diffHours = Math.abs(new Date(a.start_at || 0).getTime() - new Date(b.start_at || 0).getTime()) / 36e5;
+    if (diffHours > 36) return false;
+
+    if (normA && normA === normB) return true;
+
+    const urlA = cleanUrl(a.registration_url) || cleanUrl(a.canonical_url);
+    const urlB = cleanUrl(b.registration_url) || cleanUrl(b.canonical_url);
+    if (urlA && urlB && urlA.length > 12 && urlA === urlB) return true;
+
+    if (a.image_url && b.image_url && a.image_url === b.image_url && !a.image_url.includes('unsplash.com')) {
+      return true;
+    }
+
+    const tokensA = getTokens(a.title);
+    const tokensB = getTokens(b.title);
+    const sim = jaccard(tokensA, tokensB);
+    if (sim >= 0.7 && diffHours <= 12) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function mergeTwo(main, other) {
+    const res = { ...main };
+    if (other.title && (other.title.length > (res.title || '').length || res.title.includes('---'))) {
+      res.title = other.title;
+    }
+    if ((!res.image_url || res.image_url.includes('unsplash.com')) && other.image_url && !other.image_url.includes('unsplash.com')) {
+      res.image_url = other.image_url;
+    }
+    if ((!res.organizer_name || res.organizer_name === 'Community Host') && other.organizer_name && other.organizer_name !== 'Community Host') {
+      res.organizer_name = other.organizer_name;
+    }
+    if ((!res.venue_name || res.venue_name === 'Mumbai, India' || res.venue_name === 'Mumbai') && other.venue_name && other.venue_name !== 'Mumbai, India') {
+      res.venue_name = other.venue_name;
+    }
+    if ((!res.registration_url || res.registration_url.includes('luma.com/https')) && other.registration_url && !other.registration_url.includes('luma.com/https')) {
+      res.registration_url = other.registration_url;
+    }
+    const tags = new Set([...(res.tags || []), ...(other.tags || [])]);
+    res.tags = Array.from(tags);
+    return res;
+  }
+
+  const allEvents = [];
+  for (const ev of rawEvents) {
+    let matched = false;
+    for (let i = 0; i < allEvents.length; i++) {
+      if (areDuplicates(allEvents[i], ev)) {
+        allEvents[i] = mergeTwo(allEvents[i], ev);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      allEvents.push(ev);
+    }
+  }
 
   // Sort chronologically date-wise
   allEvents.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
@@ -389,7 +480,8 @@ async function run() {
   const pastCount = allEvents.filter(e => new Date(e.end_at || e.start_at) < now).length;
 
   console.log(`\n=== INGESTION SUMMARY ===`);
-  console.log(`Total Events Consolidate: ${allEvents.length}`);
+  console.log(`Raw Scraped Items: ${rawEvents.length}`);
+  console.log(`Total Events Consolidate (Deduplicated): ${allEvents.length}`);
   console.log(`Upcoming Events: ${upcomingCount}`);
   console.log(`Past Events: ${pastCount}`);
   console.log(`Events with custom cover pictures: ${allEvents.filter(e => e.image_url).length}`);
