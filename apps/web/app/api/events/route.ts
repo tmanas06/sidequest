@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-project')) {
+    if (process.env.ENABLE_SUPABASE_EVENTS === 'true' && supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-project')) {
       const db = createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
