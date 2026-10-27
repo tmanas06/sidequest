@@ -28,6 +28,7 @@ import {
   getActiveUserId,
   syncUserLuma,
   resyncLumaFeed,
+  setupMidnightWatcher,
   type LumaConnectionState,
   type ApprovedLumaTicket,
 } from '@/lib/luma-storage'
@@ -173,6 +174,18 @@ export default function SchedulePage() {
       handleLiveResync()
     }
   }, [lumaState.isConnected, lumaState.events.length, lumaState.calendarUrl])
+
+  // Midnight auto-refresh: automatically pulls latest personal tickets every day at midnight and when tab wakes
+  useEffect(() => {
+    const cleanupMidnight = setupMidnightWatcher(() => {
+      if (lumaState.isConnected && lumaState.calendarUrl) {
+        handleLiveResync()
+      }
+    })
+    return () => {
+      cleanupMidnight()
+    }
+  }, [lumaState.isConnected, lumaState.calendarUrl])
 
   useEffect(() => {
     const handleSync = (e: Event) => {

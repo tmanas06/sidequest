@@ -357,3 +357,72 @@ export async function resyncLumaFeed(
     }
   }
 }
+
+/**
+ * Sets up a watcher that triggers every day at midnight (and whenever the device/tab wakes on a new day)
+ * to automatically pull the latest updates for Discover events and user's schedule.
+ * Returns a cleanup function.
+ */
+export function setupMidnightWatcher(onMidnight?: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+
+  let timeoutId: NodeJS.Timeout | null = null
+  let lastDay = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
+
+  const checkDayChangeAndTrigger = async () => {
+    const currentDay = new Date().toLocaleDateString('en-CA')
+    if (currentDay !== lastDay) {
+      lastDay = currentDay
+      console.log(`[SideQuest] Midnight day rollover detected (${currentDay}). Refreshing schedule and events...`)
+
+      // 1. Resync personal schedule if connected
+      const conn = getLumaConnection()
+      if (conn.isConnected && conn.calendarUrl) {
+        await resyncLumaFeed(conn.calendarUrl)
+      }
+
+      // 2. Dispatch custom event for active pages/components to refresh Discover feed
+      window.dispatchEvent(new CustomEvent('sidequest_midnight_refresh', { detail: { date: currentDay } }))
+
+      // 3. Trigger callback if provided
+      if (onMidnight) {
+        onMidnight()
+      }
+    }
+  }
+
+  const scheduleNextMidnight = () => {
+    if (timeoutId) clearTimeout(timeoutId)
+    const now = new Date()
+    // Target next midnight + 2 seconds to ensure day has turned
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2)
+    const delay = Math.max(1000, nextMidnight.getTime() - now.getTime())
+
+    timeoutId = setTimeout(async () => {
+      await checkDayChangeAndTrigger()
+      scheduleNextMidnight()
+    }, delay)
+  }
+
+  scheduleNextMidnight()
+
+  const handleVisibility = () => {
+    if (document.visibilityState === 'visible') {
+      checkDayChangeAndTrigger()
+    }
+  }
+
+  const handleFocus = () => {
+    checkDayChangeAndTrigger()
+  }
+
+  document.addEventListener('visibilitychange', handleVisibility)
+  window.addEventListener('focus', handleFocus)
+
+  return () => {
+    if (timeoutId) clearTimeout(timeoutId)
+    document.removeEventListener('visibilitychange', handleVisibility)
+    window.removeEventListener('focus', handleFocus)
+  }
+}
+

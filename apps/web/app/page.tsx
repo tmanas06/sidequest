@@ -18,7 +18,13 @@ import {
 import { EventCard, EventCardSkeleton } from '@/components/event-card'
 import type { Database, EventCategory, BlockchainEcosystem } from '@/lib/supabase/database.types'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
-import { getLumaConnection, setActiveUserId, syncUserLuma, type LumaConnectionState } from '@/lib/luma-storage'
+import {
+  getLumaConnection,
+  setActiveUserId,
+  syncUserLuma,
+  setupMidnightWatcher,
+  type LumaConnectionState,
+} from '@/lib/luma-storage'
 import { createClient } from '@/lib/supabase/client'
 
 type SideQuestEvent = Database['public']['Tables']['events']['Row']
@@ -207,6 +213,21 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     fetchEvents()
+  }, [fetchEvents])
+
+  // Midnight auto-refresh: automatically pulls latest Discover updates at midnight and on waking tab
+  useEffect(() => {
+    const handleMidnightRefresh = () => {
+      fetchEvents()
+    }
+    window.addEventListener('sidequest_midnight_refresh', handleMidnightRefresh)
+    const cleanupWatcher = setupMidnightWatcher(() => {
+      fetchEvents()
+    })
+    return () => {
+      window.removeEventListener('sidequest_midnight_refresh', handleMidnightRefresh)
+      cleanupWatcher()
+    }
   }, [fetchEvents])
 
   // Filter events when "Approved Only" is toggled
