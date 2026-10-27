@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Compass, CalendarDays, Map, Users, User, Zap, Ticket, LogOut } from 'lucide-react'
+import { Compass, CalendarDays, Users, User, Ticket, LogOut } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { LumaConnectModal } from './luma-connect-modal'
 import { getLumaConnection, setActiveUserId, type LumaConnectionState } from '@/lib/luma-storage'
@@ -11,14 +11,13 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const navItems = [
   { href: '/', label: 'Discover', icon: Compass },
-  { href: '/schedule', label: 'Schedule', icon: CalendarDays },
+  { href: '/schedule', label: 'My Schedule', icon: CalendarDays },
   { href: '/friends', label: 'Friends', icon: Users },
   { href: '/profile', label: 'Profile', icon: User },
 ]
 
 export function Navigation() {
   const pathname = usePathname()
-  const [scrolled, setScrolled] = useState(false)
   const [showLumaModal, setShowLumaModal] = useState(false)
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null)
   const [lumaState, setLumaState] = useState<LumaConnectionState>({
@@ -34,8 +33,6 @@ export function Navigation() {
     }
 
     window.addEventListener('sidequest_luma_sync', handleSync)
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll, { passive: true })
 
     const db = createClient()
     db.auth.getUser().then(({ data }) => {
@@ -58,7 +55,6 @@ export function Navigation() {
 
     return () => {
       window.removeEventListener('sidequest_luma_sync', handleSync)
-      window.removeEventListener('scroll', onScroll)
       subscription.unsubscribe()
     }
   }, [])
@@ -72,78 +68,58 @@ export function Navigation() {
     window.location.href = '/'
   }
 
-
   return (
     <>
-      {/* Desktop top nav */}
-      <header
-        className="sticky top-0 z-50 hidden md:block transition-all duration-300"
-        style={{
-          background: scrolled
-            ? 'rgba(8,11,18,0.92)'
-            : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
-        }}
-      >
-        <nav className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      {/* Desktop Top Navigation (56px) */}
+      <header className="sticky top-0 z-40 bg-[#0B0D10]/95 backdrop-blur-md border-b border-[#292E36] hidden md:block">
+        <nav className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #6c8df8 0%, #a78bfa 100%)' }}
-            >
-              <Zap size={16} className="text-white" />
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-6 h-6 rounded bg-[#191D24] border border-[#292E36] flex items-center justify-center text-[#C6F36B] font-mono text-xs font-bold transition-colors group-hover:border-[#C6F36B]/50">
+              SQ
             </div>
-            <span
-              className="font-bold text-lg tracking-tight"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
+            <span className="font-semibold text-sm tracking-tight text-[#F5F5F0]">
               SideQuest
+            </span>
+            <span className="font-mono text-[10px] text-[#5A6270] uppercase tracking-wider pl-1 border-l border-[#292E36]">
+              Mumbai
             </span>
           </Link>
 
-          {/* Nav links */}
+          {/* Links */}
           <div className="flex items-center gap-1">
             {navItems.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+              const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
               return (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
-                  style={{
-                    color: active ? 'var(--color-brand-light)' : 'var(--color-text-secondary)',
-                    background: active ? 'rgba(108,141,248,0.12)' : 'transparent',
-                  }}
-                  onMouseEnter={e => {
-                    if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--color-text-primary)'
-                  }}
-                  onMouseLeave={e => {
-                    if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--color-text-secondary)'
-                  }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    active
+                      ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36]'
+                      : 'text-[#9298A3] hover:text-[#F5F5F0] hover:bg-[#14171C]'
+                  }`}
                 >
-                  <Icon size={16} />
-                  {label}
+                  <Icon size={14} className={active ? 'text-[#C6F36B]' : 'text-[#5A6270]'} />
+                  <span>{label}</span>
                 </Link>
               )
             })}
           </div>
 
-          {/* Luma Sync & Auth actions */}
-          <div className="flex items-center gap-2">
+          {/* Right actions */}
+          <div className="flex items-center gap-2.5">
+            {/* Luma Sync Status */}
             <button
               onClick={() => setShowLumaModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border"
-              style={{
-                background: lumaState.isConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(235, 52, 113, 0.12)',
-                borderColor: lumaState.isConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(235, 52, 113, 0.3)',
-                color: lumaState.isConnected ? '#34d399' : '#f472b6',
-              }}
-              title="Connect Luma account to sync your approved events"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono transition-all border ${
+                lumaState.isConnected
+                  ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30 hover:bg-[#10B981]/20'
+                  : 'bg-[#14171C] text-[#9298A3] border-[#292E36] hover:text-[#F5F5F0] hover:border-[#3D4450]'
+              }`}
+              title="Manage your Luma account calendar sync"
             >
-              <Ticket size={13} className={lumaState.isConnected ? 'text-emerald-400' : 'text-pink-400'} />
+              <Ticket size={12} className={lumaState.isConnected ? 'text-[#10B981]' : 'text-[#5A6270]'} />
               <span>
                 {lumaState.isConnected
                   ? `Luma (${lumaState.approvedCount})`
@@ -152,62 +128,111 @@ export function Navigation() {
             </button>
 
             {currentUser ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 pl-2 border-l border-[#292E36]">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 transition-all text-xs font-semibold text-white"
-                  title="View your Profile"
+                  className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#14171C] border border-[#292E36] hover:border-[#3D4450] text-xs text-[#F5F5F0] transition-colors"
                 >
                   {currentUser.user_metadata?.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={currentUser.user_metadata.avatar_url}
                       alt={currentUser.user_metadata.full_name || 'Profile'}
-                      className="w-6 h-6 rounded-full object-cover border border-white/20"
+                      className="w-4 h-4 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand to-purple-500 flex items-center justify-center text-[11px] font-bold text-white uppercase">
+                    <div className="w-4 h-4 rounded-full bg-[#191D24] text-[#C6F36B] font-mono text-[9px] flex items-center justify-center font-bold">
                       {currentUser.user_metadata?.full_name?.[0] || currentUser.email?.[0] || 'U'}
                     </div>
                   )}
-                  <span className="max-w-[110px] truncate">
+                  <span className="font-mono text-[11px] max-w-[90px] truncate text-[#9298A3]">
                     {currentUser.user_metadata?.full_name?.split(' ')[0] || currentUser.email?.split('@')[0]}
                   </span>
                 </Link>
 
                 <button
                   onClick={handleSignOut}
-                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20 cursor-pointer"
+                  className="p-1.5 rounded-md text-[#5A6270] hover:text-[#EF4444] hover:bg-[#14171C] transition-colors"
                   title="Sign out"
                   aria-label="Sign out"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={13} />
                 </button>
               </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2 pl-2 border-l border-[#292E36]">
                 <Link
                   href="/auth/login"
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  style={{ color: 'var(--color-text-secondary)' }}
+                  className="px-2.5 py-1 rounded text-xs text-[#9298A3] hover:text-[#F5F5F0] transition-colors"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #6c8df8, #a78bfa)',
-                    color: 'white',
-                  }}
+                  className="px-3 py-1 rounded text-xs font-semibold bg-[#191D24] hover:bg-[#20252E] text-[#C6F36B] border border-[#292E36] hover:border-[#C6F36B]/40 transition-all"
                 >
                   Join free
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </nav>
       </header>
+
+      {/* Mobile Top Header (compact 48px) */}
+      <header className="sticky top-0 z-40 bg-[#0B0D10]/95 backdrop-blur-md border-b border-[#292E36] md:hidden px-4 h-12 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded bg-[#191D24] border border-[#292E36] flex items-center justify-center text-[#C6F36B] font-mono text-[10px] font-bold">
+            SQ
+          </div>
+          <span className="font-semibold text-xs text-[#F5F5F0]">SideQuest</span>
+          <span className="font-mono text-[9px] text-[#5A6270]">MUMBAI</span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowLumaModal(true)}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono border ${
+              lumaState.isConnected
+                ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'
+                : 'bg-[#14171C] text-[#9298A3] border-[#292E36]'
+            }`}
+          >
+            <Ticket size={10} />
+            <span>{lumaState.isConnected ? `${lumaState.approvedCount}` : 'Luma'}</span>
+          </button>
+
+          {!currentUser && (
+            <Link
+              href="/auth/login"
+              className="text-[11px] font-medium text-[#9298A3] hover:text-[#F5F5F0] px-2 py-1"
+            >
+              Sign in
+            </Link>
+          )}
+        </div>
+      </header>
+
+      {/* Mobile Bottom Navigation (56px) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0D10]/95 backdrop-blur-md border-t border-[#292E36] pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around h-14">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors ${
+                  active ? 'text-[#C6F36B]' : 'text-[#5A6270] hover:text-[#9298A3]'
+                }`}
+              >
+                <Icon size={16} />
+                <span className="text-[10px] font-medium tracking-tight">{label}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
 
       {/* Luma Connect Modal */}
       <LumaConnectModal
@@ -216,39 +241,6 @@ export function Navigation() {
         onClose={() => setShowLumaModal(false)}
         onSuccess={(updated) => setLumaState(updated)}
       />
-
-
-      {/* Mobile bottom nav */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50"
-        style={{
-          background: 'rgba(8,11,18,0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        <div className="flex items-center justify-around h-16">
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || (href !== '/' && pathname.startsWith(href))
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg"
-                style={{ color: active ? 'var(--color-brand-light)' : 'var(--color-text-muted)' }}
-              >
-                <Icon size={20} />
-                <span className="text-[10px] font-medium">{label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
-
-      {/* Mobile bottom padding spacer */}
-      <div className="md:hidden h-16" />
     </>
   )
 }

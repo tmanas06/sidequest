@@ -102,46 +102,37 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess, userId }: LumaCon
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl transition-all"
+        className="relative w-full max-w-2xl rounded-xl border border-[#292E36] overflow-hidden shadow-2xl bg-[#14171C] text-[#F5F5F0]"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'linear-gradient(180deg, #121826 0%, #0a0d14 100%)',
-          color: 'var(--color-text-primary)',
-        }}
       >
         {/* Modal Header */}
-        <div className="p-6 border-b border-white/[0.08] flex items-start justify-between">
+        <div className="p-5 border-b border-[#292E36] flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
-              style={{
-                background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)',
-              }}
-            >
-              <Ticket className="text-white" size={22} />
+            <div className="w-10 h-10 rounded-lg bg-[#191D24] border border-[#292E36] flex items-center justify-center shrink-0 text-[#C6F36B]">
+              <Ticket size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold">Connect Luma Account</h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                <h3 className="text-base font-semibold text-[#F5F5F0]">Connect Luma Feed</h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
                   Approved Events Only
                 </span>
               </div>
-              <p className="text-xs text-white/60 mt-0.5">
-                Automatically import only the events you have confirmed tickets for.
+              <p className="text-xs text-[#9298A3] mt-0.5">
+                Automatically isolates only the events you have confirmed tickets for.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-md text-[#9298A3] hover:text-[#F5F5F0] hover:bg-[#191D24] transition-colors"
             aria-label="Close modal"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 

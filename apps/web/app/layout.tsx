@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Navigation } from '@/components/navigation'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: {
-    default: 'SideQuest — Web3 Event Discovery',
+    default: 'SideQuest — Web3 Event Discovery & Scheduling',
     template: '%s | SideQuest',
   },
   description:
-    'Discover and plan your schedule for Web3 events, side events, hackathons, and meetups. Your guide to India Blockchain Week, Devcon side events, and the Mumbai crypto community.',
+    'Every side event. One place to plan it all. Independent event discovery and schedule planner for Web3 communities, India Blockchain Week, and Devcon.',
   keywords: [
     'Web3 events', 'India Blockchain Week', 'IBW', 'Devcon', 'Ethereum',
     'Solana', 'Mumbai crypto', 'blockchain events', 'hackathon', 'crypto meetup',
@@ -27,10 +28,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#080b12',
+  themeColor: '#0B0D10',
 }
-
-import { Suspense } from 'react'
 
 export default function RootLayout({
   children,
@@ -39,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body>
+      <body className="bg-[#0B0D10] text-[#F5F5F0] selection:bg-[#C6F36B]/20 selection:text-[#F5F5F0] font-sans antialiased">
         <div className="min-h-dvh flex flex-col">
           <Suspense fallback={null}>
             <Navigation />
@@ -47,14 +46,20 @@ export default function RootLayout({
           <main className="flex-1">
             {children}
           </main>
-          <footer className="border-t border-white/[0.07] py-6 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            <p>SideQuest &copy; 2025–2026 — Free event discovery for Web3 communities</p>
-            <p className="mt-1">
-              Event data sourced from public Luma calendars.{' '}
-              <a href="https://lu.ma/ibw" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">IBW</a>
-              {' '}·{' '}
-              <a href="https://lu.ma/Devcon8" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">Devcon8</a>
-            </p>
+          <footer className="border-t border-[#292E36] py-8 text-center text-xs text-[#9298A3] bg-[#0B0D10]">
+            <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5F5F0]">SideQuest</span>
+                <span className="text-[#5A6270]">/</span>
+                <span>Developer Event Intelligence</span>
+              </div>
+              <div className="flex items-center gap-4 text-[11px] text-[#9298A3]">
+                <span>Sourced from public calendars:</span>
+                <a href="https://lu.ma/ibw" target="_blank" rel="noopener noreferrer" className="text-[#F5F5F0] hover:text-[#C6F36B] transition-colors underline underline-offset-2">IBW</a>
+                <span>·</span>
+                <a href="https://lu.ma/Devcon8" target="_blank" rel="noopener noreferrer" className="text-[#F5F5F0] hover:text-[#C6F36B] transition-colors underline underline-offset-2">Devcon 8</a>
+              </div>
+            </div>
           </footer>
         </div>
       </body>

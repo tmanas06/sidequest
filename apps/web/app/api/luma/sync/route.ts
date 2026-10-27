@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { SEED_WEB_EVENTS, CATEGORY_FALLBACK_IMAGES } from '@/lib/seed-events'
+import { SEED_WEB_EVENTS } from '@/lib/seed-events'
 import { createClient } from '@/lib/supabase/server'
 
 interface ParsedLumaEvent {
@@ -258,7 +258,7 @@ export async function POST(req: NextRequest) {
           lng: null,
           organizer_name: 'Luma Host',
           organizer_url: null,
-          image_url: CATEGORY_FALLBACK_IMAGES.community_meetup,
+          image_url: null,
           registration_url: parsed.url,
           registration_open: false,
           category: 'community_meetup',

@@ -38,39 +38,25 @@ const START_HOUR = 7 // 7:00 AM start
 
 const COLOR_THEMES = [
   {
-    bg: 'rgba(79, 70, 229, 0.22)',
-    border: 'rgba(99, 102, 241, 0.6)',
-    text: '#ffffff',
-    subtext: 'rgba(224, 231, 255, 0.85)',
-    chip: 'rgba(99, 102, 241, 0.4)',
+    bg: '#14171C',
+    border: '#292E36',
+    text: '#F5F5F0',
+    subtext: '#9298A3',
+    chip: '#191D24',
   },
   {
-    bg: 'rgba(168, 85, 247, 0.22)',
-    border: 'rgba(192, 132, 252, 0.6)',
-    text: '#ffffff',
-    subtext: 'rgba(243, 232, 255, 0.85)',
-    chip: 'rgba(168, 85, 247, 0.4)',
+    bg: '#14171C',
+    border: '#323842',
+    text: '#F5F5F0',
+    subtext: '#9298A3',
+    chip: '#191D24',
   },
   {
-    bg: 'rgba(20, 184, 166, 0.22)',
-    border: 'rgba(45, 212, 191, 0.6)',
-    text: '#ffffff',
-    subtext: 'rgba(204, 251, 241, 0.85)',
-    chip: 'rgba(20, 184, 166, 0.4)',
-  },
-  {
-    bg: 'rgba(244, 63, 94, 0.22)',
-    border: 'rgba(251, 113, 133, 0.6)',
-    text: '#ffffff',
-    subtext: 'rgba(255, 228, 230, 0.85)',
-    chip: 'rgba(244, 63, 94, 0.4)',
-  },
-  {
-    bg: 'rgba(59, 130, 246, 0.22)',
-    border: 'rgba(96, 165, 250, 0.6)',
-    text: '#ffffff',
-    subtext: 'rgba(219, 234, 254, 0.85)',
-    chip: 'rgba(59, 130, 246, 0.4)',
+    bg: '#14171C',
+    border: '#292E36',
+    text: '#F5F5F0',
+    subtext: '#9298A3',
+    chip: '#191D24',
   },
 ]
 
@@ -277,47 +263,47 @@ export function ScheduleDayGridView({
   }, [selectedDayKey, positionedEvents])
 
   return (
-    <div className="relative rounded-2xl border border-white/12 bg-[#0c101a] shadow-2xl overflow-hidden animate-fade-in">
+    <div className="relative rounded-xl border border-[#292E36] bg-[#101318] shadow-sm overflow-hidden animate-fade-in">
       {/* Top Day Switcher Bar */}
-      <div className="p-4 bg-[#121826] border-b border-white/10 flex items-center justify-between gap-4 flex-wrap">
+      <div className="p-4 bg-[#14171C] border-b border-[#292E36] flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-white/5 rounded-xl border border-white/10 p-0.5">
+          <div className="flex items-center bg-[#191D24] rounded-md border border-[#292E36] p-0.5">
             <button
               onClick={goToPrevDay}
-              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded text-[#9298A3] hover:text-[#F5F5F0] transition-colors"
               title="Previous Day"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={15} />
             </button>
             <button
               onClick={goToNextDay}
-              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded text-[#9298A3] hover:text-[#F5F5F0] transition-colors"
               title="Next Day"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={15} />
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-brand/20 border border-brand/35 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-extrabold uppercase text-brand-light leading-none">
+            <div className="w-9 h-9 rounded-lg bg-[#191D24] border border-[#292E36] flex flex-col items-center justify-center text-center">
+              <span className="text-[9px] font-mono font-semibold uppercase text-[#C6F36B] leading-none">
                 {selectedDayFormatted.weekday}
               </span>
-              <span className="text-base font-black text-white leading-none mt-0.5">
+              <span className="text-sm font-mono font-bold text-[#F5F5F0] leading-none mt-0.5">
                 {selectedDayFormatted.dayNum}
               </span>
             </div>
 
             <div>
-              <h3 className="font-extrabold text-base text-white tracking-tight flex items-center gap-2">
+              <h3 className="font-semibold text-sm text-[#F5F5F0] tracking-tight flex items-center gap-2">
                 <span>{selectedDayFormatted.full}</span>
                 {selectedDayKey === todayKey && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
                     Today
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#9298A3] font-mono">
                 {dayEvents.length} approved ticket{dayEvents.length !== 1 ? 's' : ''} on this day
               </p>
             </div>
@@ -325,7 +311,7 @@ export function ScheduleDayGridView({
         </div>
 
         {/* Quick Date Pills Carousel */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 scrollbar-none">
+        <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-1 scrollbar-none">
           {daysWithEvents.map(key => {
             const parts = key.split('-').map(Number)
             const d = new Date(parts[0], parts[1] - 1, parts[2])
@@ -337,12 +323,12 @@ export function ScheduleDayGridView({
               <button
                 key={key}
                 onClick={() => setSelectedDayKey(key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors shrink-0 flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                    ? 'bg-[#191D24] text-[#F5F5F0] border border-[#C6F36B]'
                     : isToday
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
-                    : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                    ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/25 hover:bg-[#10B981]/20'
+                    : 'bg-[#14171C] hover:bg-[#191D24] text-[#9298A3] hover:text-[#F5F5F0] border border-[#292E36]'
                 }`}
               >
                 <span>{label}</span>
@@ -352,20 +338,17 @@ export function ScheduleDayGridView({
         </div>
       </div>
 
-      {/* Top Banner (All-day / Multi-day IBW / Devcon side event banner) */}
-      <div className="px-4 py-2.5 bg-gradient-to-r from-indigo-950/70 via-purple-950/50 to-transparent border-b border-white/10 flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2 text-indigo-200">
-          <Sparkles size={14} className="text-brand-light shrink-0" />
-          <span className="font-semibold">
-            Side Events Timeline & Schedule Grid · Asia/Kolkata (IST)
-          </span>
+      {/* Sub Bar */}
+      <div className="px-4 py-2 bg-[#14171C]/70 border-b border-[#292E36] flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2 text-[#9298A3] font-mono text-[11px]">
+          <span>Timeline View · Asia/Kolkata (IST)</span>
         </div>
         <button
           onClick={onAddEventClick}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-brand/20 hover:bg-brand/30 text-brand-light border border-brand/35 transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
         >
-          <Plus size={12} />
-          <span>Add Custom Event</span>
+          <Plus size={12} className="text-[#C6F36B]" />
+          <span>Add Event</span>
         </button>
       </div>
 
@@ -517,18 +500,14 @@ export function ScheduleDayGridView({
         </div>
       </div>
 
-      {/* Floating Action Button (FAB) matching the screenshot */}
+      {/* Floating Action Button (FAB) */}
       <button
         onClick={onAddEventClick}
-        className="fixed md:absolute bottom-6 right-6 z-40 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-2xl transition-all duration-200 hover:scale-110 active:scale-95 group"
-        style={{
-          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-          boxShadow: '0 8px 30px rgba(79, 70, 229, 0.45)',
-        }}
+        className="fixed md:absolute bottom-6 right-6 z-40 w-12 h-12 rounded-xl flex items-center justify-center bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] shadow-lg transition-transform active:scale-95 group"
         title="Add Event"
         aria-label="Add Event"
       >
-        <Plus size={26} className="transition-transform group-hover:rotate-90 duration-300" />
+        <Plus size={22} className="transition-transform group-hover:rotate-90 duration-200" />
       </button>
     </div>
   )

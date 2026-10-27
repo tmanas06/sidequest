@@ -180,47 +180,38 @@ export function AddCustomEventModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl rounded-2xl border border-white/12 overflow-hidden shadow-2xl transition-all"
-        style={{
-          background: 'linear-gradient(180deg, #131926 0%, #0a0d14 100%)',
-          color: '#ffffff',
-        }}
+        className="relative w-full max-w-xl rounded-xl border border-[#292E36] overflow-hidden shadow-2xl bg-[#14171C] text-[#F5F5F0]"
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-6 border-b border-white/[0.08] flex items-start justify-between">
+        <div className="p-5 border-b border-[#292E36] flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
-              style={{
-                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-              }}
-            >
-              <Plus className="text-white" size={22} />
+            <div className="w-10 h-10 rounded-lg bg-[#191D24] border border-[#292E36] flex items-center justify-center shrink-0 text-[#C6F36B]">
+              <Plus size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white">Add Custom Side Event</h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand/20 text-brand-light border border-brand/35">
-                  Private / Custom
+                <h3 className="text-base font-semibold text-[#F5F5F0]">Add Custom Event</h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[#C6F36B]/10 text-[#C6F36B] border border-[#C6F36B]/20">
+                  Custom
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Add side events, private dinners, or meetups not found on public Luma feeds.
+              <p className="text-xs text-[#9298A3] mt-0.5">
+                Add side events, private dinners, or meetups to your personal agenda.
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-md text-[#9298A3] hover:text-[#F5F5F0] hover:bg-[#191D24] transition-colors"
             aria-label="Close modal"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 

@@ -63,20 +63,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
+    <div className="min-h-[80vh] flex items-center justify-center px-4 animate-fade-in">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div
-            className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #6c8df8 0%, #a78bfa 100%)' }}
-          >
-            <Zap size={22} className="text-white" />
+          <div className="w-11 h-11 rounded-xl mx-auto mb-3 flex items-center justify-center bg-[#191D24] border border-[#292E36] text-[#C6F36B]">
+            <Zap size={20} />
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#F5F5F0]">
             Welcome back
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-            Sign in to your SideQuest account
+          <p className="text-xs text-[#9298A3] mt-1">
+            Sign in to manage your schedule and friends
           </p>
         </div>
 
@@ -85,7 +82,7 @@ export default function LoginPage() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-2.5 bg-white text-black hover:bg-slate-100 transition-all shadow-md active:scale-[0.99] mb-4 cursor-pointer"
+          className="w-full h-10 rounded-lg font-medium text-xs flex items-center justify-center gap-2.5 bg-[#F5F5F0] text-[#0B0D10] hover:bg-white transition-colors shadow-sm mb-4 cursor-pointer"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path
@@ -108,23 +105,21 @@ export default function LoginPage() {
           <span>Continue with Google</span>
         </button>
 
-        <div className="relative flex items-center justify-center mb-5">
-          <div className="flex-1 border-t border-white/10" />
-          <span className="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="relative flex items-center justify-center mb-4">
+          <div className="flex-1 border-t border-[#292E36]" />
+          <span className="px-2.5 text-[10px] font-mono text-[#9298A3] uppercase tracking-wider">
             or with email
           </span>
-          <div className="flex-1 border-t border-white/10" />
+          <div className="flex-1 border-t border-[#292E36]" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wider"
-              style={{ color: 'var(--color-text-muted)' }}>
+            <label htmlFor="email" className="block text-[11px] font-mono uppercase tracking-wider text-[#9298A3] mb-1">
               Email
             </label>
             <div className="relative">
-              <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: 'var(--color-text-muted)' }} />
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9298A3]" />
               <input
                 id="email"
                 type="email"
@@ -133,29 +128,22 @@ export default function LoginPage() {
                 required
                 placeholder="you@example.com"
                 autoComplete="email"
-                className="w-full pl-9 pr-4 h-11 rounded-xl text-sm outline-none"
-                style={{
-                  background: 'rgba(13,17,23,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'var(--color-text-primary)',
-                }}
+                className="w-full pl-9 pr-3 h-10 rounded-lg text-xs bg-[#14171C] border border-[#292E36] text-[#F5F5F0] placeholder-[#9298A3]/50 focus:outline-none focus:border-[#C6F36B]"
               />
             </div>
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--color-text-muted)' }}>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="password" className="block text-[11px] font-mono uppercase tracking-wider text-[#9298A3]">
                 Password
               </label>
-              <Link href="/auth/reset-password" className="text-xs" style={{ color: 'var(--color-brand-light)' }}>
-                Forgot password?
+              <Link href="/auth/reset-password" className="text-xs text-[#9298A3] hover:text-[#F5F5F0]">
+                Forgot?
               </Link>
             </div>
             <div className="relative">
-              <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: 'var(--color-text-muted)' }} />
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9298A3]" />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -163,27 +151,21 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full pl-9 pr-10 h-11 rounded-xl text-sm outline-none"
-                style={{
-                  background: 'rgba(13,17,23,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'var(--color-text-primary)',
-                }}
+                className="w-full pl-9 pr-9 h-10 rounded-lg text-xs bg-[#14171C] border border-[#292E36] text-[#F5F5F0] placeholder-[#9298A3]/50 focus:outline-none focus:border-[#C6F36B]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--color-text-muted)' }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9298A3] hover:text-[#F5F5F0]"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
 
           {error && (
-            <p className="text-sm px-3 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+            <p className="text-xs px-3 py-2 rounded-lg bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/25">
               {error}
             </p>
           )}
@@ -191,16 +173,15 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg, #6c8df8, #a78bfa)', color: 'white' }}
+            className="w-full h-10 rounded-lg text-xs font-semibold bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] transition-colors disabled:opacity-60 cursor-pointer"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
-        <p className="text-center text-sm mt-6" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-center text-xs mt-6 text-[#9298A3]">
           Don&apos;t have an account?{' '}
-          <Link href="/auth/register" style={{ color: 'var(--color-brand-light)' }}>
+          <Link href="/auth/register" className="text-[#C6F36B] hover:underline font-medium">
             Join free
           </Link>
         </p>

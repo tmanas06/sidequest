@@ -257,31 +257,31 @@ export default function SchedulePage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#F5F5F0]">
               My Schedule
             </h1>
             {lumaState.isConnected && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
-                <CheckCircle2 size={13} className="text-emerald-400" />
+              <span className="px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 flex items-center gap-1.5">
+                <CheckCircle2 size={12} className="text-[#10B981]" />
                 <span>Luma Synced ({scheduleEvents.length} Approved)</span>
               </span>
             )}
           </div>
-          <p className="text-sm mt-1 text-slate-300">
-            Personalized agenda displaying <strong>only approved & confirmed side event tickets</strong>.
+          <p className="text-sm mt-1 text-[#9298A3]">
+            Personalized agenda displaying confirmed registrations and approved tickets.
           </p>
         </div>
 
         {/* Top actions */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* View Switcher: Agenda vs Day Grid vs Month */}
-          <div className="flex items-center bg-white/[0.08] border border-white/12 rounded-xl p-1 gap-1 shadow-sm">
+          {/* View Switcher */}
+          <div className="flex items-center bg-[#14171C] border border-[#292E36] rounded-lg p-0.5 gap-0.5 shadow-sm">
             <button
               onClick={() => setViewMode('agenda')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'agenda'
-                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36] shadow-sm'
+                  : 'text-[#9298A3] hover:text-[#F5F5F0]'
               }`}
             >
               <List size={13} />
@@ -289,10 +289,10 @@ export default function SchedulePage() {
             </button>
             <button
               onClick={() => setViewMode('day')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'day'
-                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36] shadow-sm'
+                  : 'text-[#9298A3] hover:text-[#F5F5F0]'
               }`}
             >
               <Clock size={13} />
@@ -300,10 +300,10 @@ export default function SchedulePage() {
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'month'
-                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36] shadow-sm'
+                  : 'text-[#9298A3] hover:text-[#F5F5F0]'
               }`}
             >
               <CalendarDays size={13} />
@@ -311,37 +311,35 @@ export default function SchedulePage() {
             </button>
           </div>
 
-          {/* Add Custom Event Button (Only After Login) */}
+          {/* Add Custom Event */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs bg-brand hover:bg-brand-light text-white shadow-md transition-all hover:scale-105"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-medium text-xs bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors shadow-sm"
           >
-            <Plus size={14} />
+            <Plus size={13} className="text-[#C6F36B]" />
             <span>Add Event</span>
           </button>
 
+          {/* Connect Luma button */}
           <button
             onClick={() => setShowConnectModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md"
-            style={{
-              background: lumaState.isConnected
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)',
-              color: '#ffffff',
-              border: lumaState.isConnected ? '1px solid rgba(255, 255, 255, 0.15)' : 'none',
-            }}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium text-xs transition-colors shadow-sm ${
+              lumaState.isConnected
+                ? 'bg-[#14171C] hover:bg-[#191D24] text-[#F5F5F0] border border-[#292E36]'
+                : 'bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] font-semibold'
+            }`}
           >
-            <Ticket size={14} className={lumaState.isConnected ? 'text-emerald-400' : 'text-white'} />
-            <span>{lumaState.isConnected ? 'Manage Luma Sync' : 'Connect Luma Account'}</span>
+            <Ticket size={13} />
+            <span>{lumaState.isConnected ? 'Manage Luma Sync' : 'Connect Luma'}</span>
           </button>
 
           {scheduleEvents.length > 0 && (
             <button
               onClick={() => exportApprovedIcs(scheduleEvents)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium text-xs bg-[#14171C] hover:bg-[#191D24] text-[#9298A3] hover:text-[#F5F5F0] border border-[#292E36] transition-colors shadow-sm"
               title="Download iCal (.ics) for Apple Calendar / Google Calendar"
             >
-              <Download size={14} />
+              <Download size={13} />
               <span>Export .ICS</span>
             </button>
           )}
@@ -350,17 +348,17 @@ export default function SchedulePage() {
 
       {/* Luma Connection Status Banner */}
       {lumaState.isConnected ? (
-        <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-between gap-4 flex-wrap">
+        <div className="mb-8 p-4 rounded-xl bg-[#14171C] border border-[#10B981]/30 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-              <Ticket size={20} className="text-emerald-400" />
+            <div className="w-9 h-9 rounded-lg bg-[#10B981]/15 border border-[#10B981]/30 flex items-center justify-center shrink-0">
+              <Ticket size={16} className="text-[#10B981]" />
             </div>
             <div>
-              <p className="font-bold text-sm text-emerald-200">
-                Connected: {lumaState.accountLabel || 'Luma User Calendar'}
+              <p className="font-semibold text-xs md:text-sm text-[#F5F5F0]">
+                Connected: {lumaState.accountLabel || 'Personal Luma Calendar'}
               </p>
-              <p className="text-xs text-emerald-300/80">
-                Filtering strictly for approved tickets. Waitlisted/pending events are withheld until accepted.
+              <p className="text-[11px] text-[#9298A3]">
+                Filtering strictly for approved tickets. Waitlisted and pending events are withheld until confirmed.
               </p>
             </div>
           </div>
@@ -368,14 +366,14 @@ export default function SchedulePage() {
           <div className="flex items-center gap-2 text-xs">
             <button
               onClick={() => setShowConnectModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] font-medium transition-colors"
             >
               <RefreshCw size={12} />
               <span>Re-sync</span>
             </button>
             <button
               onClick={() => disconnectLuma(currentUser?.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[#EF4444] hover:bg-[#EF4444]/10 font-medium transition-colors"
             >
               <Unlink size={12} />
               <span>Disconnect</span>
@@ -384,43 +382,39 @@ export default function SchedulePage() {
         </div>
       ) : (
         /* Empty / Not Connected Banner */
-        <div className="mb-8 p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-transparent relative overflow-hidden">
+        <div className="mb-8 p-6 rounded-xl border border-[#292E36] bg-[#14171C] relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
             <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold bg-pink-500/20 text-pink-300 border border-pink-500/30">
-                <Sparkles size={12} />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider bg-[#C6F36B]/10 text-[#C6F36B] border border-[#C6F36B]/20">
+                <Sparkles size={11} />
                 <span>1-Click Luma Calendar Sync</span>
               </div>
-              <h2 className="text-xl font-bold text-white">
-                Want to see only the events you are approved for?
+              <h2 className="text-lg md:text-xl font-semibold text-[#F5F5F0]">
+                Filter down to events you are approved for
               </h2>
-              <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-                Connect your private Luma subscription feed. SideQuest automatically isolates your <strong>confirmed & approved tickets</strong> so you never miss a side event you're accepted to, without the noise of waitlists.
+              <p className="text-xs md:text-sm text-[#9298A3] leading-relaxed">
+                Connect your private Luma subscription feed. SideQuest isolates your confirmed tickets so you can see your real itinerary without the noise of waitlists.
               </p>
             </div>
 
             <button
               onClick={() => setShowConnectModal(true)}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm text-white shadow-xl hover:opacity-95 transition-all shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)',
-              }}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-xs bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] shadow-sm transition-colors shrink-0"
             >
-              <Ticket size={16} />
-              <span>Connect Luma Account</span>
+              <Ticket size={14} />
+              <span>Connect Luma Feed</span>
             </button>
           </div>
 
           {/* Visual Step-by-Step Guide with Real Screenshots */}
-          <div className="mt-8 pt-6 border-t border-white/10 space-y-4">
+          <div className="mt-6 pt-5 border-t border-[#292E36] space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  <Sparkles size={14} className="text-pink-400" />
-                  <span>How to Find Your Private Luma Calendar Link (Visual Guide)</span>
+                <h3 className="font-medium text-xs md:text-sm text-[#F5F5F0] flex items-center gap-2">
+                  <span>How to find your personal Luma Calendar link</span>
                 </h3>
-                <p className="text-xs text-white/60 mt-0.5">
-                  Follow these 2 steps on Luma to get your personal subscription URL:
+                <p className="text-[11px] text-[#9298A3] mt-0.5">
+                  Follow these 2 quick steps on Luma to get your personal subscription URL:
                 </p>
               </div>
 
@@ -428,79 +422,61 @@ export default function SchedulePage() {
                 href="https://lu.ma/settings"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-[#9298A3] hover:text-[#F5F5F0] bg-[#191D24] border border-[#292E36] transition-colors"
               >
-                <span>Open lu.ma/settings</span>
-                <ExternalLink size={12} />
+                <span>lu.ma/settings</span>
+                <ExternalLink size={11} />
               </a>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Step 1 Card */}
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-lg bg-[#101318] border border-[#292E36] space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/30 text-pink-300 font-bold flex items-center justify-center text-xs">
+                  <span className="w-4 h-4 rounded font-mono text-[10px] bg-[#191D24] text-[#C6F36B] border border-[#292E36] font-semibold flex items-center justify-center">
                     1
                   </span>
-                  <p className="font-semibold text-xs text-white">
-                    Settings ➔ Account ➔ Click "Add iCal Subscription"
+                  <p className="font-medium text-xs text-[#F5F5F0]">
+                    Settings ➔ Account ➔ "Add iCal Subscription"
                   </p>
                 </div>
-                <p className="text-[11px] text-white/60">
-                  Open your Luma Account Settings, scroll to <strong>Account Syncing</strong>, and tap <strong>Add iCal Subscription</strong>.
+                <p className="text-[11px] text-[#9298A3]">
+                  In Luma Settings, scroll to <strong>Account Syncing</strong> and click <strong>Add iCal Subscription</strong>.
                 </p>
-                <div className="rounded-lg overflow-hidden border border-white/10 bg-slate-950">
+                <div className="rounded border border-[#292E36] bg-[#0B0D10] overflow-hidden">
                   <img
                     src="/guides/luma-step1-account-syncing.png"
                     alt="Luma Account Settings - Calendar Syncing button"
-                    className="w-full object-cover h-36 hover:h-60 transition-all duration-300 cursor-pointer"
+                    className="w-full object-cover h-28 hover:h-48 transition-all duration-200 cursor-pointer"
                   />
-                  <div className="p-1.5 bg-black/80 text-[10px] text-pink-300/80 font-medium text-center">
-                    Step 1: Click "Add iCal Subscription"
-                  </div>
                 </div>
               </div>
 
               {/* Step 2 Card */}
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-lg bg-[#101318] border border-[#292E36] space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/30 text-pink-300 font-bold flex items-center justify-center text-xs">
+                  <span className="w-4 h-4 rounded font-mono text-[10px] bg-[#191D24] text-[#C6F36B] border border-[#292E36] font-semibold flex items-center justify-center">
                     2
                   </span>
-                  <p className="font-semibold text-xs text-white">
-                    In popup, click "Copy URL to Clipboard"
+                  <p className="font-medium text-xs text-[#F5F5F0]">
+                    Click "Copy URL to Clipboard"
                   </p>
                 </div>
-                <p className="text-[11px] text-white/60">
-                  At the bottom of the Luma popup (below the Google/Apple buttons), click <strong>Copy URL to Clipboard</strong>.
+                <p className="text-[11px] text-[#9298A3]">
+                  At the bottom of the modal, click <strong>Copy URL to Clipboard</strong>.
                 </p>
-                <div className="rounded-lg overflow-hidden border border-white/10 bg-slate-950">
+                <div className="rounded border border-[#292E36] bg-[#0B0D10] overflow-hidden">
                   <img
                     src="/guides/luma-step2-copy-clipboard.png"
                     alt="Luma Add iCal Subscription modal - Copy URL link"
-                    className="w-full object-cover h-36 hover:h-60 transition-all duration-300 cursor-pointer"
+                    className="w-full object-cover h-28 hover:h-48 transition-all duration-200 cursor-pointer"
                   />
-                  <div className="p-1.5 bg-black/80 text-[10px] text-emerald-400 font-medium text-center">
-                    Step 2: Click "Copy URL to Clipboard"
-                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="pt-2 text-center">
-              <button
-                onClick={() => setShowConnectModal(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white shadow-lg transition-all hover:scale-105"
-                style={{ background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)' }}
-              >
-                <Ticket size={14} />
-                <span>Ready? Paste Link & Sync Approved Events</span>
-              </button>
             </div>
           </div>
         </div>
       )}
-
 
       {viewMode === 'day' ? (
         <ScheduleDayGridView
@@ -514,49 +490,49 @@ export default function SchedulePage() {
         <>
           {/* Tabs & Controls */}
           {scheduleEvents.length > 0 && (
-            <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10 gap-4 flex-wrap">
+            <div className="flex items-center justify-between mb-6 pb-3 border-b border-[#292E36] gap-4 flex-wrap">
               {/* Tabs */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab('upcoming')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
                     activeTab === 'upcoming'
-                      ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                      : 'bg-white/5 hover:bg-white/10 text-white/70'
+                      ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36] shadow-sm'
+                      : 'text-[#9298A3] hover:text-[#F5F5F0]'
                   }`}
                 >
-                  <Calendar size={13} />
+                  <Calendar size={12} />
                   <span>Upcoming ({upcomingEvents.length})</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('past')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
                     activeTab === 'past'
-                      ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                      : 'bg-white/5 hover:bg-white/10 text-white/70'
+                      ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36] shadow-sm'
+                      : 'text-[#9298A3] hover:text-[#F5F5F0]'
                   }`}
                 >
-                  <Clock size={13} />
+                  <Clock size={12} />
                   <span>Past Events ({pastEvents.length})</span>
                 </button>
               </div>
 
               {/* Past Range Filter */}
               {activeTab === 'past' && pastEvents.length > 0 && (
-                <div className="flex items-center gap-1.5 text-xs bg-white/5 p-1 rounded-lg border border-white/10">
-                  <span className="text-[11px] text-white/50 px-2">Show:</span>
+                <div className="flex items-center gap-1 text-xs bg-[#14171C] p-0.5 rounded border border-[#292E36]">
+                  <span className="text-[10px] text-[#9298A3] px-2 font-mono">Show:</span>
                   <button
                     onClick={() => setPastRange('week')}
-                    className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                      pastRange === 'week' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      pastRange === 'week' ? 'bg-[#191D24] text-[#F5F5F0]' : 'text-[#9298A3] hover:text-[#F5F5F0]'
                     }`}
                   >
                     Past 7 Days
                   </button>
                   <button
                     onClick={() => setPastRange('all')}
-                    className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                      pastRange === 'all' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      pastRange === 'all' ? 'bg-[#191D24] text-[#F5F5F0]' : 'text-[#9298A3] hover:text-[#F5F5F0]'
                     }`}
                   >
                     All ({pastEvents.length})
@@ -568,46 +544,45 @@ export default function SchedulePage() {
 
           {/* Conflict Warnings */}
           {activeTab === 'upcoming' && conflicts.size > 0 && (
-            <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-400 shrink-0" />
-              <span>
-                <strong>Schedule Warning:</strong> You have {conflicts.size} overlapping approved events scheduled at the same time. Check details below.
+            <div className="mb-6 p-3.5 rounded-lg bg-[#14171C] border border-[#F59E0B]/40 text-[#F59E0B] text-xs flex items-center gap-2.5">
+              <AlertTriangle size={15} className="shrink-0 text-[#F59E0B]" />
+              <span className="text-[#F5F5F0]">
+                <strong className="text-[#F59E0B]">Schedule Conflict:</strong> You have {conflicts.size} overlapping events scheduled at the same time. Check details below.
               </span>
             </div>
           )}
 
           {/* Empty State */}
           {scheduleEvents.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-              <CalendarDays size={44} className="mx-auto mb-3 opacity-30 text-brand" />
-              <h3 className="text-lg font-bold text-white mb-1">No approved events found yet</h3>
-              <p className="text-xs text-white/60 max-w-md mx-auto mb-6">
-                Connect your Luma account to automatically load events you have approved tickets for, or explore the discover feed to RSVP.
+            <div className="text-center py-16 border border-dashed border-[#292E36] rounded-xl bg-[#14171C]/50">
+              <CalendarDays size={36} className="mx-auto mb-3 text-[#9298A3]" />
+              <h3 className="text-base font-semibold text-[#F5F5F0] mb-1">Your next event starts here</h3>
+              <p className="text-xs text-[#9298A3] max-w-sm mx-auto mb-5">
+                Connect your Luma calendar link to display your confirmed tickets, or explore the discover directory.
               </p>
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={() => setShowConnectModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-md"
-                  style={{ background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)' }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] transition-colors"
                 >
-                  <Ticket size={14} />
-                  <span>Connect Luma Feed</span>
+                  <Ticket size={13} />
+                  <span>Connect Luma</span>
                 </button>
                 <Link
                   href="/"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
                 >
-                  <span>Explore All Events</span>
+                  <span>Explore Events</span>
                 </Link>
               </div>
             </div>
           ) : displayedEvents.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-              <CalendarDays size={36} className="mx-auto mb-2 opacity-30 text-brand" />
-              <p className="text-sm font-semibold text-white">No {activeTab} approved events found</p>
-              <p className="text-xs text-white/60 mt-1">
+            <div className="text-center py-12 border border-dashed border-[#292E36] rounded-xl bg-[#14171C]/50">
+              <CalendarDays size={32} className="mx-auto mb-2 text-[#9298A3]" />
+              <p className="text-sm font-semibold text-[#F5F5F0]">No {activeTab} approved events found</p>
+              <p className="text-xs text-[#9298A3] mt-1">
                 {activeTab === 'past' && pastRange === 'week'
-                  ? 'No events in the past 7 days. Switch to "All" to see earlier events.'
+                  ? 'No events in the past 7 days. Switch to "All" to inspect earlier events.'
                   : 'All your confirmed registrations starting today onwards will appear here.'}
               </p>
             </div>
@@ -617,16 +592,16 @@ export default function SchedulePage() {
               {groupedByDay.map(({ key, label, items }) => (
                 <section key={key} className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-brand/20 text-brand-light border border-brand/35 shadow-sm">
+                    <span className="font-mono text-xs font-semibold uppercase tracking-wider text-[#C6F36B]">
                       {label}
                     </span>
-                    <span className="text-xs font-semibold text-slate-300">
-                      {items.length} approved event{items.length !== 1 ? 's' : ''}
+                    <span className="text-xs font-mono text-[#9298A3]">
+                      {items.length} event{items.length !== 1 ? 's' : ''}
                     </span>
-                    <div className="flex-1 h-px bg-white/10" />
+                    <div className="flex-1 h-px bg-[#292E36]" />
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {items.map(ev => {
                       const s = new Date(ev.start_at)
                       const e = ev.end_at ? new Date(ev.end_at) : null
@@ -649,67 +624,65 @@ export default function SchedulePage() {
                       return (
                         <div
                           key={ev.id}
-                          className="p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-start gap-4 shadow-xl bg-[#121826] hover:bg-[#162032] border-white/10 hover:border-brand/40"
+                          className="p-4 rounded-xl border border-[#292E36] bg-[#14171C] hover:border-[#383F4A] transition-colors flex flex-col sm:flex-row sm:items-start gap-4"
                         >
                           {/* Time Block */}
-                          <div className="sm:w-32 shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1.5 border-b sm:border-b-0 pb-3 sm:pb-0 border-white/10">
-                            <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-center w-full">
-                              <span className="font-extrabold text-sm text-white block">
-                                {timeFormatted}
+                          <div className="sm:w-28 shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
+                            <span className="font-mono font-medium text-xs text-[#F5F5F0] block">
+                              {timeFormatted}
+                            </span>
+                            {endTimeFormatted && (
+                              <span className="font-mono text-[10px] text-[#9298A3] block">
+                                to {endTimeFormatted}
                               </span>
-                              {endTimeFormatted && (
-                                <span className="text-[11px] text-slate-400 block">
-                                  to {endTimeFormatted}
-                                </span>
-                              )}
-                            </div>
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35">
-                              <CheckCircle2 size={10} className="text-emerald-400" />
+                            )}
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/25 mt-1">
+                              <CheckCircle2 size={10} className="text-[#10B981]" />
                               <span>Approved</span>
                             </span>
                           </div>
 
                           {/* Content */}
-                          <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex-1 min-w-0 space-y-1">
                             <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-bold text-base text-white hover:text-brand-light transition-colors leading-snug">
+                              <h3 className="font-medium text-sm text-[#F5F5F0] hover:text-[#C6F36B] transition-colors leading-snug">
                                 {ev.title}
                               </h3>
                               <a
                                 href={ev.original_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
-                                title="Open Luma event ticket"
+                                className="p-1 rounded text-[#9298A3] hover:text-[#F5F5F0] transition-colors shrink-0"
+                                title="Open ticket on Luma"
                               >
-                                <ExternalLink size={14} />
+                                <ExternalLink size={13} />
                               </a>
                             </div>
 
                             {ev.venue_name && (
-                              <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                                <MapPin size={12} className="shrink-0 text-emerald-400" />
-                                <span className="truncate font-medium">{ev.venue_name}</span>
+                              <div className="flex items-center gap-1.5 text-xs text-[#9298A3]">
+                                <MapPin size={11} className="shrink-0 text-[#9298A3]" />
+                                <span className="truncate">{ev.venue_name}</span>
                               </div>
                             )}
 
                             {hasConflict && (
-                              <div className="mt-2 p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-200 flex items-center gap-1.5 font-medium">
-                                <AlertTriangle size={12} className="shrink-0 text-amber-400" />
+                              <div className="mt-2 p-2 rounded bg-[#101318] border border-[#F59E0B]/30 text-[11px] text-[#F59E0B] flex items-center gap-1.5">
+                                <AlertTriangle size={11} className="shrink-0" />
                                 <span>Overlaps with: {conflicts.get(ev.id)!.join(', ')}</span>
                               </div>
                             )}
                           </div>
 
                           {/* Actions */}
-                          <div className="shrink-0 flex items-center sm:flex-col gap-2 pt-2 sm:pt-0">
+                          <div className="shrink-0 flex items-center gap-2 pt-1 sm:pt-0">
                             <a
                               href={ev.original_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-brand hover:bg-brand-light text-white shadow-md transition-all hover:scale-105"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
                             >
-                              <Ticket size={13} />
+                              <Ticket size={12} className="text-[#C6F36B]" />
                               <span>Ticket</span>
                             </a>
                           </div>
@@ -732,7 +705,7 @@ export default function SchedulePage() {
         onSuccess={updated => setLumaState(updated)}
       />
 
-      {/* Add Custom Event Modal (With Login Check) */}
+      {/* Add Custom Event Modal */}
       <AddCustomEventModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}

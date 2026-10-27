@@ -203,20 +203,20 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
   return (
     <div className="space-y-6">
       {/* Month Navigation Header */}
-      <div className="p-4 rounded-2xl bg-[#0f1422] border border-white/10 flex items-center justify-between gap-4 flex-wrap shadow-lg">
+      <div className="p-4 rounded-xl bg-[#14171C] border border-[#292E36] flex items-center justify-between gap-4 flex-wrap shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand/20 border border-brand/30 flex items-center justify-center text-brand-light">
-            <CalendarIcon size={20} />
+          <div className="w-9 h-9 rounded-lg bg-[#191D24] border border-[#292E36] flex items-center justify-center text-[#C6F36B]">
+            <CalendarIcon size={18} />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#F5F5F0] tracking-tight flex items-center gap-2">
               <span>{monthTitle}</span>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand/15 text-brand-light border border-brand/30">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#191D24] text-[#C6F36B] border border-[#292E36]">
                 {totalInCurrentMonth} approved event{totalInCurrentMonth !== 1 ? 's' : ''}
               </span>
             </h2>
-            <p className="text-xs text-slate-400">
-              Click any date to inspect your approved tickets for that day
+            <p className="text-xs text-[#9298A3]">
+              Select any date to inspect your approved tickets for that day
             </p>
           </div>
         </div>
@@ -224,39 +224,37 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
         <div className="flex items-center gap-2">
           <button
             onClick={jumpToToday}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors"
+            className="px-3 py-1.5 rounded-md text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
           >
             Today
           </button>
-          <div className="flex items-center bg-white/5 rounded-xl border border-white/10 p-0.5">
+          <div className="flex items-center bg-[#191D24] rounded-md border border-[#292E36] p-0.5">
             <button
               onClick={prevMonth}
-              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded text-[#9298A3] hover:text-[#F5F5F0] transition-colors"
               title="Previous Month"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={15} />
             </button>
             <button
               onClick={nextMonth}
-              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded text-[#9298A3] hover:text-[#F5F5F0] transition-colors"
               title="Next Month"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={15} />
             </button>
           </div>
         </div>
       </div>
 
       {/* 7-Day Calendar Grid */}
-      <div className="rounded-2xl border border-white/10 overflow-hidden bg-[#0c101a] shadow-xl">
+      <div className="rounded-xl border border-[#292E36] overflow-hidden bg-[#101318] shadow-sm">
         {/* Day-of-week header */}
-        <div className="grid grid-cols-7 border-b border-white/10 bg-[#121826] text-center">
-          {weekDayHeaders.map((dayName, idx) => (
+        <div className="grid grid-cols-7 border-b border-[#292E36] bg-[#14171C] text-center">
+          {weekDayHeaders.map((dayName) => (
             <div
               key={dayName}
-              className={`py-3 text-xs font-bold uppercase tracking-wider ${
-                idx >= 5 ? 'text-purple-300/80' : 'text-slate-300'
-              }`}
+              className="py-2.5 text-[11px] font-mono font-medium uppercase tracking-wider text-[#9298A3]"
             >
               {dayName}
             </div>
@@ -264,7 +262,7 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
         </div>
 
         {/* Day cells grid */}
-        <div className="grid grid-cols-7 divide-x divide-y divide-white/[0.08]">
+        <div className="grid grid-cols-7 divide-x divide-y divide-[#292E36]">
           {calendarDays.map((cell) => {
             const isSelected = cell.dayKey === selectedDayKey
             const hasEvents = cell.events.length > 0
@@ -273,36 +271,36 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
               <div
                 key={cell.dayKey}
                 onClick={() => setSelectedDayKey(cell.dayKey)}
-                className={`min-h-[105px] p-2 flex flex-col justify-between transition-all cursor-pointer relative group ${
+                className={`min-h-[96px] p-2 flex flex-col justify-between transition-colors cursor-pointer relative group ${
                   !cell.isCurrentMonth
-                    ? 'bg-black/40 text-slate-600 opacity-40 hover:opacity-80'
+                    ? 'bg-[#0B0D10]/50 text-[#9298A3]/40'
                     : isSelected
-                    ? 'bg-brand/[0.12] ring-2 ring-inset ring-brand'
+                    ? 'bg-[#191D24] ring-1 ring-inset ring-[#C6F36B]'
                     : cell.isToday
-                    ? 'bg-emerald-500/[0.07] hover:bg-white/[0.05]'
+                    ? 'bg-[#10B981]/5 hover:bg-[#14171C]'
                     : hasEvents
-                    ? 'bg-[#101625] hover:bg-[#141d30]'
-                    : 'bg-[#0c101a] hover:bg-white/[0.02]'
+                    ? 'bg-[#14171C] hover:bg-[#191D24]'
+                    : 'bg-[#101318] hover:bg-[#14171C]'
                 }`}
               >
                 {/* Date header */}
                 <div className="flex items-center justify-between mb-1">
                   <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                    className={`w-5 h-5 rounded flex items-center justify-center text-xs font-mono font-medium ${
                       cell.isToday
-                        ? 'bg-emerald-500 text-black shadow-md'
+                        ? 'bg-[#10B981] text-[#0B0D10] font-bold'
                         : isSelected
-                        ? 'bg-brand text-white shadow-md'
+                        ? 'bg-[#C6F36B] text-[#0B0D10] font-bold'
                         : cell.isCurrentMonth
-                        ? 'text-white group-hover:text-brand-light'
-                        : 'text-slate-500'
+                        ? 'text-[#F5F5F0]'
+                        : 'text-[#9298A3]/50'
                     }`}
                   >
                     {cell.dayNumber}
                   </span>
 
                   {hasEvents && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
                   )}
                 </div>
 
@@ -321,21 +319,21 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
                     return (
                       <div
                         key={ev.id}
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium truncate flex items-center gap-1 border ${
+                        className={`px-1.5 py-0.5 rounded text-[10px] truncate flex items-center gap-1 border ${
                           hasConflict
-                            ? 'bg-amber-500/15 border-amber-500/30 text-amber-200'
-                            : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-200'
+                            ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]'
+                            : 'bg-[#191D24] border-[#292E36] text-[#F5F5F0]'
                         }`}
                         title={`${timeStr} - ${ev.title}`}
                       >
-                        <span className="font-bold shrink-0">{timeStr}</span>
+                        <span className="font-mono text-[9px] shrink-0 text-[#9298A3]">{timeStr}</span>
                         <span className="truncate">{ev.title}</span>
                       </div>
                     )
                   })}
 
                   {cell.events.length > 2 && (
-                    <div className="text-[10px] font-bold text-brand-light px-1">
+                    <div className="text-[10px] font-mono text-[#C6F36B] px-1">
                       +{cell.events.length - 2} more
                     </div>
                   )}
@@ -343,8 +341,8 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
 
                 {/* Bottom indicator if events present */}
                 {hasEvents && (
-                  <div className="pt-1 text-[9px] font-bold text-slate-400 text-right">
-                    {cell.events.length} ticket{cell.events.length !== 1 ? 's' : ''}
+                  <div className="pt-1 text-[9px] font-mono text-[#9298A3] text-right">
+                    {cell.events.length} event{cell.events.length !== 1 ? 's' : ''}
                   </div>
                 )}
               </div>
@@ -354,40 +352,40 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
       </div>
 
       {/* Selected Day Agenda Drawer / Details */}
-      <div className="p-6 rounded-2xl bg-[#0f1422] border border-white/12 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-white/10 flex-wrap gap-2">
+      <div className="p-5 rounded-xl bg-[#14171C] border border-[#292E36] shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#292E36] flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-brand" />
-              <h3 className="text-lg font-extrabold text-white tracking-tight">
+              <span className="w-2 h-2 rounded-full bg-[#C6F36B]" />
+              <h3 className="text-base font-semibold text-[#F5F5F0] tracking-tight">
                 {selectedDayFormatted}
               </h3>
               {selectedDayKey === todayKey && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
                   Today
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#9298A3] mt-0.5 font-mono">
               {selectedDayEvents.length} approved ticket{selectedDayEvents.length !== 1 ? 's' : ''} for this date
             </p>
           </div>
 
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300">
-            Selected Day
+          <span className="text-xs font-mono px-2.5 py-0.5 rounded bg-[#191D24] border border-[#292E36] text-[#9298A3]">
+            Selected Date
           </span>
         </div>
 
         {selectedDayEvents.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
-            <CalendarIcon size={32} className="mx-auto mb-2 opacity-30 text-brand" />
-            <p className="text-sm font-semibold text-white">No approved events on this date</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          <div className="text-center py-10 border border-dashed border-[#292E36] rounded-lg bg-[#101318]/50">
+            <CalendarIcon size={28} className="mx-auto mb-2 text-[#9298A3]" />
+            <p className="text-sm font-semibold text-[#F5F5F0]">No approved events on this date</p>
+            <p className="text-xs text-[#9298A3] mt-1 max-w-sm mx-auto">
               You haven't registered or been approved for side events on {selectedDayFormatted}. Click any highlighted date in the calendar above to view your events.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {selectedDayEvents.map((ev) => {
               const s = new Date(ev.start_at)
               const e = ev.end_at ? new Date(ev.end_at) : null
@@ -410,54 +408,52 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
               return (
                 <div
                   key={ev.id}
-                  className="p-5 rounded-xl border border-white/10 bg-[#141b29] hover:bg-[#182235] hover:border-brand/40 transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-4 shadow-md"
+                  className="p-4 rounded-xl border border-[#292E36] bg-[#101318] hover:border-[#383F4A] transition-colors flex flex-col sm:flex-row sm:items-start justify-between gap-4"
                 >
                   {/* Time badge */}
-                  <div className="sm:w-32 shrink-0 space-y-1">
-                    <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-center">
-                      <span className="font-extrabold text-sm text-white block">
-                        {timeFormatted}
+                  <div className="sm:w-28 shrink-0 space-y-1">
+                    <span className="font-mono text-xs font-medium text-[#F5F5F0] block">
+                      {timeFormatted}
+                    </span>
+                    {endTimeFormatted && (
+                      <span className="font-mono text-[10px] text-[#9298A3] block">
+                        to {endTimeFormatted}
                       </span>
-                      {endTimeFormatted && (
-                        <span className="text-[11px] text-slate-400 block">
-                          to {endTimeFormatted}
-                        </span>
-                      )}
-                    </div>
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    )}
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/25">
                       <CheckCircle2 size={10} />
                       <span>Approved</span>
-                    </div>
+                    </span>
                   </div>
 
                   {/* Event Details */}
-                  <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-bold text-base text-white hover:text-brand-light transition-colors leading-snug">
+                      <h4 className="font-medium text-sm text-[#F5F5F0] hover:text-[#C6F36B] transition-colors leading-snug">
                         {ev.title}
                       </h4>
                       <a
                         href={ev.original_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                        className="p-1 rounded text-[#9298A3] hover:text-[#F5F5F0] transition-colors shrink-0"
                         title="Open event page"
                       >
-                        <ExternalLink size={14} />
+                        <ExternalLink size={13} />
                       </a>
                     </div>
 
                     {ev.venue_name && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                        <MapPin size={12} className="shrink-0 text-emerald-400" />
-                        <span className="truncate font-medium">{ev.venue_name}</span>
-                        {ev.city && <span className="text-slate-500">· {ev.city}</span>}
+                      <div className="flex items-center gap-1.5 text-xs text-[#9298A3]">
+                        <MapPin size={11} className="shrink-0 text-[#9298A3]" />
+                        <span className="truncate">{ev.venue_name}</span>
+                        {ev.city && <span>· {ev.city}</span>}
                       </div>
                     )}
 
                     {hasConflict && (
-                      <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 flex items-center gap-1.5">
-                        <AlertTriangle size={12} className="shrink-0 text-amber-400" />
+                      <div className="p-2 rounded bg-[#14171C] border border-[#F59E0B]/30 text-[11px] text-[#F59E0B] flex items-center gap-1.5">
+                        <AlertTriangle size={11} className="shrink-0" />
                         <span>
                           Time overlap with: <strong>{conflicts.get(ev.id)!.join(', ')}</strong>
                         </span>
@@ -471,10 +467,10 @@ export function ScheduleCalendarView({ events, conflicts }: ScheduleCalendarView
                       href={ev.original_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-brand hover:bg-brand-light text-white shadow-md transition-all hover:scale-105"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
                     >
-                      <Ticket size={13} />
-                      <span>View Ticket</span>
+                      <Ticket size={12} className="text-[#C6F36B]" />
+                      <span>Ticket</span>
                     </a>
                   </div>
                 </div>

@@ -1,12 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { format, formatDistanceToNow, isToday, isTomorrow } from 'date-fns'
+import { format, isToday, isTomorrow } from 'date-fns'
 import { toZonedTime } from 'date-fns-tz'
-import { MapPin, Clock, ExternalLink, Bookmark, Users, Tag } from 'lucide-react'
+import { MapPin, Clock, ExternalLink, Bookmark, Check, CalendarPlus } from 'lucide-react'
 import Link from 'next/link'
-import type { Database, EventCategory } from '@/lib/supabase/database.types'
-import { CATEGORY_FALLBACK_IMAGES } from '@/lib/seed-events'
+import type { Database, EventCategory, UserEventStatus } from '@/lib/supabase/database.types'
 
 type Event = Database['public']['Tables']['events']['Row']
 
@@ -14,226 +13,200 @@ interface EventCardProps {
   event: Event
   saved?: boolean
   isApproved?: boolean
+  personalStatus?: UserEventStatus | null
   onSave?: (eventId: string) => void
   className?: string
-  dayAccentColor?: string
 }
 
-const CATEGORY_LABELS: Record<EventCategory, string> = {
+const CATEGORY_NAMES: Record<string, string> = {
   hackathon: 'Hackathon',
   workshop: 'Workshop',
-  technical_talk: 'Talk',
+  technical_talk: 'Technical Talk',
   conference: 'Conference',
   networking: 'Networking',
-  community_meetup: 'Meetup',
-  founder_investor: 'Founders',
-  party_social: 'Social',
+  community_meetup: 'Community Meetup',
+  founder_investor: 'Founders & VCs',
+  party_social: 'Party & Social',
   other: 'Other',
   uncategorized: 'Event',
 }
 
-function formatEventDate(startAt: string, timezone = 'Asia/Kolkata'): string {
-  const date = toZonedTime(new Date(startAt), timezone)
-
-  if (isToday(date)) return `Today · ${format(date, 'h:mm a')}`
-  if (isTomorrow(date)) return `Tomorrow · ${format(date, 'h:mm a')}`
-
-  return format(date, "EEE, MMM d · h:mm a")
-}
-
-function formatDateRange(startAt: string, endAt: string | null, timezone = 'Asia/Kolkata'): string {
-  const start = toZonedTime(new Date(startAt), timezone)
-  if (!endAt) return format(start, 'h:mm a')
-
-  const end = toZonedTime(new Date(endAt), timezone)
-  return `${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  registered: { label: 'Registered', bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981', border: 'rgba(16, 185, 129, 0.3)' },
+  approved: { label: 'Ticket Approved', bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981', border: 'rgba(16, 185, 129, 0.3)' },
+  planning_to_attend: { label: 'Planning to attend', bg: 'rgba(198, 243, 107, 0.12)', text: '#C6F36B', border: 'rgba(198, 243, 107, 0.3)' },
+  interested: { label: 'Interested', bg: 'rgba(56, 189, 248, 0.12)', text: '#38BDF8', border: 'rgba(56, 189, 248, 0.3)' },
+  waitlisted: { label: 'Waitlisted', bg: 'rgba(245, 158, 11, 0.12)', text: '#F59E0B', border: 'rgba(245, 158, 11, 0.3)' },
+  cancelled: { label: 'Cancelled', bg: 'rgba(239, 68, 68, 0.12)', text: '#EF4444', border: 'rgba(239, 68, 68, 0.3)' },
+  attended: { label: 'Attended', bg: 'rgba(148, 163, 184, 0.12)', text: '#94A3B8', border: 'rgba(148, 163, 184, 0.3)' },
+  missed: { label: 'Missed', bg: 'rgba(239, 68, 68, 0.12)', text: '#EF4444', border: 'rgba(239, 68, 68, 0.3)' },
+  discovered: { label: 'Discovered', bg: 'rgba(255, 255, 255, 0.04)', text: '#9298A3', border: '#292E36' },
 }
 
 export function EventCard({
   event,
   saved = false,
   isApproved = false,
+  personalStatus,
   onSave,
   className = '',
-  dayAccentColor,
 }: EventCardProps) {
   const tz = event.timezone_name || 'Asia/Kolkata'
-  const categoryLabel = CATEGORY_LABELS[event.category] ?? 'Event'
-  const badgeClass = `badge-${event.category}`
+  const start = event.start_at ? toZonedTime(new Date(event.start_at), tz) : new Date()
+  const end = event.end_at ? toZonedTime(new Date(event.end_at), tz) : null
+  const [imgError, setImgError] = useState(false)
 
-  const defaultImg =
-    event.image_url ||
-    CATEGORY_FALLBACK_IMAGES[event.category] ||
-    CATEGORY_FALLBACK_IMAGES.other
+  // Real Luma image check (only use if legitimate and not broken)
+  const hasValidImage = !!event.image_url && !imgError && event.image_url.startsWith('http') && !event.image_url.includes('unsplash.com')
 
-  const [imgSrc, setImgSrc] = useState(defaultImg)
+  // Date Rail Elements
+  const dayOfWeek = format(start, 'EEE').toUpperCase()
+  const dayOfMonth = format(start, 'dd')
+  const timeFormatted = format(start, 'h:mm a')
+  const timeEndFormatted = end ? format(end, 'h:mm a') : null
+
+  // Status computation
+  const activeStatus = isApproved ? 'approved' : personalStatus || (event.is_cancelled ? 'cancelled' : null)
+  const statusCfg = activeStatus ? STATUS_CONFIG[activeStatus] : null
 
   return (
     <article
-      className={`group relative rounded-xl overflow-hidden transition-all duration-200 animate-fade-in ${className}`}
-      style={{
-        background: 'rgba(13,17,23,0.85)',
-        border: dayAccentColor ? `1px solid ${dayAccentColor}33` : '1px solid rgba(255,255,255,0.07)',
-      }}
-      onMouseEnter={e => {
-        ;(e.currentTarget as HTMLElement).style.borderColor = dayAccentColor || 'rgba(108,141,248,0.35)'
-        ;(e.currentTarget as HTMLElement).style.background = 'rgba(19,25,32,0.95)'
-      }}
-      onMouseLeave={e => {
-        ;(e.currentTarget as HTMLElement).style.borderColor = dayAccentColor ? `${dayAccentColor}33` : 'rgba(255,255,255,0.07)'
-        ;(e.currentTarget as HTMLElement).style.background = 'rgba(13,17,23,0.85)'
-      }}
+      className={`group relative rounded-lg bg-[#14171C] border border-[#292E36] hover:border-[#3D4450] transition-all duration-150 overflow-hidden flex flex-col justify-between ${className}`}
     >
-      {/* Day Colour Band top highlight */}
-      {dayAccentColor && (
-        <div
-          className="absolute top-0 left-0 right-0 h-1 z-20"
-          style={{
-            backgroundColor: dayAccentColor,
-            boxShadow: `0 0 10px ${dayAccentColor}`,
-          }}
-        />
-      )}
-
-      {/* Event image with guaranteed fallback & onError handler */}
-      <div className="relative h-44 overflow-hidden bg-slate-900">
-        <img
-          src={imgSrc}
-          alt={event.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          onError={() => {
-            const fallback =
-              CATEGORY_FALLBACK_IMAGES[event.category] ||
-              CATEGORY_FALLBACK_IMAGES.other
-            if (imgSrc !== fallback) {
-              setImgSrc(fallback)
-            }
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, transparent 35%, rgba(8,11,18,0.92))' }}
-        />
-        {/* Category & Approved badge over image */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
-          <span className={`${badgeClass} px-2 py-0.5 rounded-full text-xs font-semibold border`}>
-            {categoryLabel}
+      <div className="p-4 flex gap-4">
+        {/* Compact Date Rail on Desktop */}
+        <div className="hidden sm:flex flex-col items-center justify-start shrink-0 w-14 pt-0.5 border-r border-[#292E36]/60 pr-3">
+          <span className="font-mono text-[10px] tracking-widest text-[#9298A3] font-semibold">
+            {dayOfWeek}
           </span>
-          {isApproved && (
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/90 text-white shadow-md backdrop-blur-sm border border-emerald-400/50 flex items-center gap-1">
-              ✓ Approved Ticket
-            </span>
-          )}
+          <span className="font-mono text-xl font-bold text-[#F5F5F0] leading-none mt-1">
+            {dayOfMonth}
+          </span>
+          <span className="font-mono text-[9px] text-[#5A6270] mt-1 uppercase">
+            {format(start, 'MMM')}
+          </span>
         </div>
 
-        {/* Save button */}
-        <button
-          onClick={() => onSave?.(event.id)}
-          aria-label={saved ? 'Remove from saved' : 'Save event'}
-          className="absolute top-3 right-3 p-2 rounded-full transition-all duration-150"
-          style={{
-            background: 'rgba(8,11,18,0.7)',
-            backdropFilter: 'blur(8px)',
-            color: saved ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-        >
-          <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-        </button>
-      </div>
+        {/* Center Main Details */}
+        <div className="flex-1 min-w-0">
+          {/* Top meta row: Mobile date badge + Category + Ecosystem + Status */}
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
+            {/* Mobile-only date pill */}
+            <span className="sm:hidden font-mono text-[10px] font-semibold text-[#9298A3] bg-[#191D24] px-1.5 py-0.5 rounded border border-[#292E36]">
+              {dayOfWeek} {dayOfMonth} {format(start, 'MMM')}
+            </span>
 
-      <div className="p-4">
-        {/* Title */}
-        <Link href={`/events/${encodeURIComponent(event.id)}`} className="block group/link">
-          <h3
-            className="font-semibold text-base leading-snug mb-1 line-clamp-2 transition-colors"
-            style={{ color: 'var(--color-text-primary)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-light)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-          >
-            {event.title}
-          </h3>
-        </Link>
+            {/* Category */}
+            <span className="font-mono text-[10px] font-medium text-[#9298A3] bg-[#191D24] px-2 py-0.5 rounded border border-[#292E36]">
+              {CATEGORY_NAMES[event.category] || 'Event'}
+            </span>
 
-        {/* Organizer */}
-        {event.organizer_name && (
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-            by {event.organizer_name}
-          </p>
-        )}
+            {/* Primary Ecosystem */}
+            {event.ecosystems && event.ecosystems.length > 0 && (
+              <span className="font-mono text-[10px] font-medium text-[#9298A3] bg-[#191D24] px-1.5 py-0.5 rounded border border-[#292E36]">
+                {event.ecosystems[0].replace('_', '/')}
+              </span>
+            )}
 
-        {/* Metadata row */}
-        <div className="space-y-1.5">
-          {/* Date */}
-          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            <Clock size={13} className="shrink-0" style={{ color: 'var(--color-brand)' }} />
-            <span>{formatEventDate(event.start_at, tz)}</span>
-            {event.end_at && (
-              <span style={{ color: 'var(--color-text-muted)' }}>
-                · {formatDateRange(event.start_at, event.end_at, tz)}
+            {/* Status Indicator */}
+            {statusCfg && (
+              <span
+                className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded border flex items-center gap-1"
+                style={{
+                  backgroundColor: statusCfg.bg,
+                  color: statusCfg.text,
+                  borderColor: statusCfg.border,
+                }}
+              >
+                {activeStatus === 'approved' && <Check size={10} />}
+                <span>{statusCfg.label}</span>
               </span>
             )}
           </div>
 
-          {/* Venue */}
-          {(event.venue_name || event.city) && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              <MapPin size={13} className="shrink-0" style={{ color: 'var(--color-accent-teal)' }} />
-              <span className="truncate">
-                {event.venue_name || event.city}
+          {/* Title */}
+          <Link href={`/events/${encodeURIComponent(event.id)}`} className="block group/title">
+            <h3 className="font-semibold text-sm sm:text-base text-[#F5F5F0] group-hover/title:text-[#C6F36B] transition-colors leading-snug line-clamp-2">
+              {event.title}
+            </h3>
+          </Link>
+
+          {/* Organizer */}
+          {event.organizer_name && (
+            <p className="text-xs text-[#9298A3] mt-1 truncate">
+              by <span className="text-[#F5F5F0]">{event.organizer_name}</span>
+            </p>
+          )}
+
+          {/* Time & Venue Info */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#9298A3] font-mono">
+            {/* Time */}
+            <div className="flex items-center gap-1.5">
+              <Clock size={12} className="text-[#5A6270] shrink-0" />
+              <span>
+                {timeFormatted}
+                {timeEndFormatted ? ` – ${timeEndFormatted}` : ''}
               </span>
             </div>
-          )}
 
-          {/* Ecosystems */}
-          {event.ecosystems && event.ecosystems.length > 0 && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              <Tag size={13} className="shrink-0" style={{ color: 'var(--color-accent-purple)' }} />
-              <div className="flex gap-1 flex-wrap">
-                {event.ecosystems.slice(0, 3).map(eco => (
-                  <span
-                    key={eco}
-                    className="text-xs px-1.5 py-0.5 rounded"
-                    style={{
-                      background: 'rgba(167,139,250,0.1)',
-                      color: 'var(--color-accent-purple)',
-                    }}
-                  >
-                    {eco.replace('_', '/')}
-                  </span>
-                ))}
+            {/* Venue */}
+            {(event.venue_name || event.city) && (
+              <div className="flex items-center gap-1.5 truncate max-w-[240px]">
+                <MapPin size={12} className="text-[#5A6270] shrink-0" />
+                <span className="truncate">
+                  {event.venue_name || event.city}
+                </span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Footer: source + action */}
-        <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {/* Source attribution */}
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            {event.source_attribution || 'Luma'}
-          </span>
+        {/* Right Thumbnail (Only if authentic source cover image exists) */}
+        {hasValidImage && (
+          <div className="hidden sm:block shrink-0 w-20 h-20 rounded-md overflow-hidden bg-[#101318] border border-[#292E36]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.image_url!}
+              alt=""
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
+          </div>
+        )}
+      </div>
 
-          {/* Register/View link */}
+      {/* Card Footer Bar: Source Attribution + Quick Actions */}
+      <div className="px-4 py-2 bg-[#101318]/70 border-t border-[#292E36] flex items-center justify-between text-xs">
+        <span className="font-mono text-[10px] text-[#5A6270] truncate max-w-[180px]">
+          {event.source_attribution || 'Luma'}
+        </span>
+
+        <div className="flex items-center gap-2">
+          {/* Save / Bookmark to Schedule */}
+          <button
+            onClick={() => onSave?.(event.id)}
+            aria-label={saved ? 'Remove from schedule' : 'Save to schedule'}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+              saved
+                ? 'bg-[#C6F36B]/15 text-[#C6F36B] border border-[#C6F36B]/40'
+                : 'text-[#9298A3] hover:text-[#F5F5F0] hover:bg-[#191D24] border border-transparent'
+            }`}
+            title={saved ? 'Saved in personal schedule' : 'Save to schedule'}
+          >
+            <Bookmark size={12} fill={saved ? 'currentColor' : 'none'} />
+            <span>{saved ? 'Saved' : 'Save'}</span>
+          </button>
+
+          {/* External Registration Link */}
           <a
             href={event.registration_url || event.original_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150"
-            style={{
-              background: 'rgba(108,141,248,0.12)',
-              color: 'var(--color-brand-light)',
-              border: '1px solid rgba(108,141,248,0.2)',
-            }}
-            onMouseEnter={e => {
-              ;(e.currentTarget as HTMLElement).style.background = 'rgba(108,141,248,0.2)'
-            }}
-            onMouseLeave={e => {
-              ;(e.currentTarget as HTMLElement).style.background = 'rgba(108,141,248,0.12)'
-            }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono font-medium text-[#F5F5F0] bg-[#191D24] hover:bg-[#20252E] hover:text-[#C6F36B] border border-[#292E36] hover:border-[#3D4450] transition-colors"
           >
-            Register <ExternalLink size={11} />
+            <span>Register</span>
+            <ExternalLink size={10} />
           </a>
         </div>
       </div>
@@ -244,16 +217,15 @@ export function EventCard({
 /** Skeleton placeholder while loading */
 export function EventCardSkeleton() {
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ border: '1px solid rgba(255,255,255,0.07)' }}
-    >
-      <div className="h-44 shimmer" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 rounded shimmer w-3/4" />
-        <div className="h-3 rounded shimmer w-1/2" />
-        <div className="h-3 rounded shimmer w-2/3" />
+    <div className="rounded-lg bg-[#14171C] border border-[#292E36] p-4 flex gap-4 animate-pulse">
+      <div className="hidden sm:block w-14 h-16 bg-[#191D24] rounded" />
+      <div className="flex-1 space-y-2.5">
+        <div className="h-3 w-28 bg-[#191D24] rounded" />
+        <div className="h-4 w-3/4 bg-[#191D24] rounded" />
+        <div className="h-3 w-1/3 bg-[#191D24] rounded" />
+        <div className="h-3 w-1/2 bg-[#191D24] rounded" />
       </div>
+      <div className="hidden sm:block w-20 h-20 bg-[#191D24] rounded" />
     </div>
   )
 }
