@@ -50,7 +50,7 @@ interface DayTheme {
   dotColor: string
 }
 
-export const DAY_THEMES: DayTheme[] = [
+const DAY_THEMES: DayTheme[] = [
   {
     // Day 1: Emerald Green
     primary: '#10b981',

@@ -1,16 +1,10 @@
-import type { NextConfig } from "next";
-import path from "path";
+import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: path.resolve(process.cwd(), "../.."),
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
+    root: path.resolve(process.cwd(), '../..'),
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig
