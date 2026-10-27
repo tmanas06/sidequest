@@ -163,7 +163,7 @@ export function EventCard({
 
         {/* Right Thumbnail (Only if authentic source cover image exists) */}
         {hasValidImage && (
-          <div className="hidden sm:block shrink-0 w-20 h-20 rounded-md overflow-hidden bg-[#101318] border border-[#292E36]">
+          <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden bg-[#101318] border border-[#292E36] self-start mt-0.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={event.image_url!}

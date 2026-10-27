@@ -300,11 +300,52 @@ export async function scrapeLumaIcs(calId, attribution) {
 async function run() {
   console.log('=== Starting Complete Luma Ingestion (IBW & Devcon8) ===');
 
-  // Step 1: Scrape HTML pages for exact S3 cover images & featured events
+  // Step 1: Query official Luma internal calendar API for rich event items + cover images
+  console.log('[Luma API] Fetching calendar items and cover images from api.lu.ma...');
+  const imageMap = new Map();
+  const titleMap = new Map();
+
+  function addMapping(key, url) {
+    if (!key || !url) return;
+    const clean = url.replace(/images\.lumacdn\.com\/cdn-cgi\/image\/[^/]+\//, 'images.lumacdn.com/');
+    imageMap.set(key, clean);
+    imageMap.set(key.toLowerCase(), clean);
+  }
+
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch('https://api.lu.ma/calendar/get-items?calendar_api_id=cal-ikh3xL3FdXBrJa9', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+      fetch('https://api.lu.ma/calendar/get-items?calendar_api_id=cal-uho3uXcPGigtake', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+    ]);
+    const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+    for (const item of [...(d1.entries || []), ...(d2.entries || [])]) {
+      const ev = item.event;
+      if (!ev) continue;
+      const img = ev.cover_url || ev.social_image_url;
+      if (!img) continue;
+
+      addMapping(item.api_id, img);
+      addMapping(ev.api_id, img);
+      if (ev.url) {
+        addMapping(ev.url, img);
+        addMapping('https://luma.com/' + ev.url, img);
+        addMapping('https://lu.ma/' + ev.url, img);
+        addMapping('https://luma.com/event/' + ev.url, img);
+      }
+      if (ev.name) {
+        const norm = ev.name.toLowerCase().trim().replace(/[^\w\s]/g, '');
+        titleMap.set(norm, img);
+      }
+    }
+    console.log(`[Luma API] Extracted ${imageMap.size} image mappings from Luma API`);
+  } catch (err) {
+    console.warn('[Luma API] Failed to fetch calendar items:', err);
+  }
+
+  // Step 2: Scrape HTML pages for exact S3 cover images & featured events
   const ibwHtml = await scrapeLumaPage('https://lu.ma/ibw', 'India Blockchain Week');
   const devconHtml = await scrapeLumaPage('https://lu.ma/Devcon8', 'Devcon8 Side Events');
 
-  const imageMap = new Map();
   for (const ev of [...ibwHtml, ...devconHtml]) {
     if (ev.image_url) {
       imageMap.set(ev.id, ev.image_url);
@@ -312,18 +353,17 @@ async function run() {
     }
   }
 
-  // Step 2: Fetch the complete calendar feeds (cal-ikh3xL3FdXBrJa9 & cal-uho3uXcPGigtake)
+  // Step 3: Fetch the complete calendar feeds (cal-ikh3xL3FdXBrJa9 & cal-uho3uXcPGigtake)
   const ibwIcs = await scrapeLumaIcs('cal-ikh3xL3FdXBrJa9', 'India Blockchain Week');
   const devconIcs = await scrapeLumaIcs('cal-uho3uXcPGigtake', 'Devcon 8 Side Events');
 
-  // Step 3: Merge and deduplicate all events
+  // Step 4: Merge and deduplicate all events
   const mergedMap = new Map();
 
   // First seed with full ICS events
   for (const ev of [...ibwIcs, ...devconIcs]) {
     const key = ev.id || ev.canonical_url;
-    // Check if we have an image from HTML
-    const img = imageMap.get(ev.id) || imageMap.get(ev.canonical_url);
+    const img = imageMap.get(ev.id) || imageMap.get(ev.canonical_url) || (ev.title && titleMap.get(ev.title.toLowerCase().trim().replace(/[^\w\s]/g, '')));
     if (img) ev.image_url = img;
     mergedMap.set(key, ev);
   }
