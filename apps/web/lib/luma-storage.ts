@@ -73,3 +73,18 @@ export function disconnectLuma(): void {
     console.error('Failed to disconnect Luma:', err)
   }
 }
+
+export function addCustomEvent(event: ApprovedLumaTicket): void {
+  const current = getLumaConnection()
+  const filtered = current.events.filter(e => e.id !== event.id)
+  const updatedEvents = [event, ...filtered]
+  const updatedState: LumaConnectionState = {
+    ...current,
+    isConnected: true,
+    approvedCount: updatedEvents.length,
+    events: updatedEvents,
+    accountLabel: current.accountLabel || 'My Schedule',
+  }
+  saveLumaConnection(updatedState)
+}
+

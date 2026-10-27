@@ -100,9 +100,13 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+      onClick={onClose}
+    >
       <div
         className="relative w-full max-w-2xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl transition-all"
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(180deg, #121826 0%, #0a0d14 100%)',
           color: 'var(--color-text-primary)',
@@ -215,6 +219,7 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
 
                 <a
                   href="/schedule"
+                  onClick={onClose}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand hover:bg-brand-light text-white transition-colors"
                   style={{ background: 'var(--color-brand)' }}
                 >

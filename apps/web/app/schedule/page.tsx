@@ -17,6 +17,8 @@ import {
   Unlink,
   ChevronDown,
   ChevronUp,
+  List,
+  Plus,
 } from 'lucide-react'
 
 import {
@@ -26,6 +28,9 @@ import {
   type ApprovedLumaTicket,
 } from '@/lib/luma-storage'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
+import { ScheduleCalendarView } from '@/components/schedule-calendar-view'
+import { ScheduleDayGridView } from '@/components/schedule-day-grid-view'
+import { AddCustomEventModal } from '@/components/add-custom-event-modal'
 
 interface ScheduleEvent {
   id: string
@@ -155,6 +160,8 @@ export default function SchedulePage() {
 
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
   const [pastRange, setPastRange] = useState<'week' | 'all'>('week')
+  const [viewMode, setViewMode] = useState<'agenda' | 'day' | 'month'>('day')
+  const [showAddModal, setShowAddModal] = useState(false)
 
   const { upcomingEvents, pastEvents, displayedEvents } = useMemo(() => {
     const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
@@ -220,12 +227,12 @@ export default function SchedulePage() {
   }, [displayedEvents])
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:pb-12 animate-fade-in">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-24 md:pb-12 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">
               My Schedule
             </h1>
             {lumaState.isConnected && (
@@ -235,16 +242,62 @@ export default function SchedulePage() {
               </span>
             )}
           </div>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-sm mt-1 text-slate-300">
             Personalized agenda displaying <strong>only approved & confirmed side event tickets</strong>.
           </p>
         </div>
 
         {/* Top actions */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* View Switcher: Agenda vs Day Grid vs Month */}
+          <div className="flex items-center bg-white/[0.08] border border-white/12 rounded-xl p-1 gap-1 shadow-sm">
+            <button
+              onClick={() => setViewMode('agenda')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'agenda'
+                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <List size={13} />
+              <span>Agenda</span>
+            </button>
+            <button
+              onClick={() => setViewMode('day')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'day'
+                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Clock size={13} />
+              <span>Day Grid</span>
+            </button>
+            <button
+              onClick={() => setViewMode('month')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'month'
+                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <CalendarDays size={13} />
+              <span>Month</span>
+            </button>
+          </div>
+
+          {/* Add Custom Event Button (Only After Login) */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs bg-brand hover:bg-brand-light text-white shadow-md transition-all hover:scale-105"
+          >
+            <Plus size={14} />
+            <span>Add Event</span>
+          </button>
+
           <button
             onClick={() => setShowConnectModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md"
             style={{
               background: lumaState.isConnected
                 ? 'rgba(255, 255, 255, 0.08)'
@@ -260,7 +313,7 @@ export default function SchedulePage() {
           {scheduleEvents.length > 0 && (
             <button
               onClick={() => exportApprovedIcs(scheduleEvents)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors shadow-sm"
               title="Download iCal (.ics) for Apple Calendar / Google Calendar"
             >
               <Download size={14} />
@@ -424,220 +477,226 @@ export default function SchedulePage() {
       )}
 
 
-      {/* Tabs & Controls */}
-      {scheduleEvents.length > 0 && (
-        <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10 gap-4 flex-wrap">
-          {/* Tabs */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'upcoming'
-                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                  : 'bg-white/5 hover:bg-white/10 text-white/70'
-              }`}
-            >
-              <Calendar size={13} />
-              <span>Upcoming ({upcomingEvents.length})</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('past')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'past'
-                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
-                  : 'bg-white/5 hover:bg-white/10 text-white/70'
-              }`}
-            >
-              <Clock size={13} />
-              <span>Past Events ({pastEvents.length})</span>
-            </button>
-          </div>
-
-          {/* Past Range Filter */}
-          {activeTab === 'past' && pastEvents.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs bg-white/5 p-1 rounded-lg border border-white/10">
-              <span className="text-[11px] text-white/50 px-2">Show:</span>
-              <button
-                onClick={() => setPastRange('week')}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                  pastRange === 'week' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Past 7 Days
-              </button>
-              <button
-                onClick={() => setPastRange('all')}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                  pastRange === 'all' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                All ({pastEvents.length})
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Conflict Warnings */}
-      {activeTab === 'upcoming' && conflicts.size > 0 && (
-        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
-          <AlertTriangle size={16} className="text-amber-400 shrink-0" />
-          <span>
-            <strong>Schedule Warning:</strong> You have {conflicts.size} overlapping approved events scheduled at the same time. Check details below.
-          </span>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {scheduleEvents.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-          <CalendarDays size={44} className="mx-auto mb-3 opacity-30 text-brand" />
-          <h3 className="text-lg font-bold text-white mb-1">No approved events found yet</h3>
-          <p className="text-xs text-white/60 max-w-md mx-auto mb-6">
-            Connect your Luma account to automatically load events you have approved tickets for, or explore the discover feed to RSVP.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => setShowConnectModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-md"
-              style={{ background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)' }}
-            >
-              <Ticket size={14} />
-              <span>Connect Luma Feed</span>
-            </button>
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white transition-colors"
-            >
-              <span>Explore All Events</span>
-            </Link>
-          </div>
-        </div>
-      ) : displayedEvents.length === 0 ? (
-        <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-          <CalendarDays size={36} className="mx-auto mb-2 opacity-30 text-brand" />
-          <p className="text-sm font-semibold text-white">No {activeTab} approved events found</p>
-          <p className="text-xs text-white/60 mt-1">
-            {activeTab === 'past' && pastRange === 'week'
-              ? 'No events in the past 7 days. Switch to "All" to see earlier events.'
-              : 'All your confirmed registrations starting today onwards will appear here.'}
-          </p>
-        </div>
+      {viewMode === 'day' ? (
+        <ScheduleDayGridView
+          events={scheduleEvents}
+          conflicts={conflicts}
+          onAddEventClick={() => setShowAddModal(true)}
+        />
+      ) : viewMode === 'month' ? (
+        <ScheduleCalendarView events={scheduleEvents} conflicts={conflicts} />
       ) : (
-        /* Timeline of Approved Events Grouped by Day */
-        <div className="space-y-8">
-          {groupedByDay.map(({ key, label, items }) => (
-            <section key={key} className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 rounded-lg text-xs font-extrabold uppercase tracking-wider bg-brand/20 text-brand-light border border-brand/30">
-                  {label}
-                </span>
-                <span className="text-xs font-medium text-white/50">
-                  {items.length} approved event{items.length !== 1 ? 's' : ''}
-                </span>
-                <div className="flex-1 h-px bg-white/10" />
+        <>
+          {/* Tabs & Controls */}
+          {scheduleEvents.length > 0 && (
+            <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10 gap-4 flex-wrap">
+              {/* Tabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === 'upcoming'
+                      ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                      : 'bg-white/5 hover:bg-white/10 text-white/70'
+                  }`}
+                >
+                  <Calendar size={13} />
+                  <span>Upcoming ({upcomingEvents.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('past')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === 'past'
+                      ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                      : 'bg-white/5 hover:bg-white/10 text-white/70'
+                  }`}
+                >
+                  <Clock size={13} />
+                  <span>Past Events ({pastEvents.length})</span>
+                </button>
               </div>
 
-              <div className="space-y-3">
-                {items.map(ev => {
-                  const s = new Date(ev.start_at)
-                  const e = ev.end_at ? new Date(ev.end_at) : null
-                  const hasConflict = conflicts.has(ev.id)
-                  const timeFormatted = s.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true,
-                    timeZone: 'Asia/Kolkata',
-                  })
-                  const endTimeFormatted = e
-                    ? e.toLocaleTimeString('en-US', {
+              {/* Past Range Filter */}
+              {activeTab === 'past' && pastEvents.length > 0 && (
+                <div className="flex items-center gap-1.5 text-xs bg-white/5 p-1 rounded-lg border border-white/10">
+                  <span className="text-[11px] text-white/50 px-2">Show:</span>
+                  <button
+                    onClick={() => setPastRange('week')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                      pastRange === 'week' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    Past 7 Days
+                  </button>
+                  <button
+                    onClick={() => setPastRange('all')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                      pastRange === 'all' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    All ({pastEvents.length})
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Conflict Warnings */}
+          {activeTab === 'upcoming' && conflicts.size > 0 && (
+            <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+              <span>
+                <strong>Schedule Warning:</strong> You have {conflicts.size} overlapping approved events scheduled at the same time. Check details below.
+              </span>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {scheduleEvents.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+              <CalendarDays size={44} className="mx-auto mb-3 opacity-30 text-brand" />
+              <h3 className="text-lg font-bold text-white mb-1">No approved events found yet</h3>
+              <p className="text-xs text-white/60 max-w-md mx-auto mb-6">
+                Connect your Luma account to automatically load events you have approved tickets for, or explore the discover feed to RSVP.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setShowConnectModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-md"
+                  style={{ background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)' }}
+                >
+                  <Ticket size={14} />
+                  <span>Connect Luma Feed</span>
+                </button>
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white transition-colors"
+                >
+                  <span>Explore All Events</span>
+                </Link>
+              </div>
+            </div>
+          ) : displayedEvents.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+              <CalendarDays size={36} className="mx-auto mb-2 opacity-30 text-brand" />
+              <p className="text-sm font-semibold text-white">No {activeTab} approved events found</p>
+              <p className="text-xs text-white/60 mt-1">
+                {activeTab === 'past' && pastRange === 'week'
+                  ? 'No events in the past 7 days. Switch to "All" to see earlier events.'
+                  : 'All your confirmed registrations starting today onwards will appear here.'}
+              </p>
+            </div>
+          ) : (
+            /* Timeline of Approved Events Grouped by Day */
+            <div className="space-y-8">
+              {groupedByDay.map(({ key, label, items }) => (
+                <section key={key} className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-brand/20 text-brand-light border border-brand/35 shadow-sm">
+                      {label}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-300">
+                      {items.length} approved event{items.length !== 1 ? 's' : ''}
+                    </span>
+                    <div className="flex-1 h-px bg-white/10" />
+                  </div>
+
+                  <div className="space-y-3">
+                    {items.map(ev => {
+                      const s = new Date(ev.start_at)
+                      const e = ev.end_at ? new Date(ev.end_at) : null
+                      const hasConflict = conflicts.has(ev.id)
+                      const timeFormatted = s.toLocaleTimeString('en-US', {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: true,
                         timeZone: 'Asia/Kolkata',
                       })
-                    : null
+                      const endTimeFormatted = e
+                        ? e.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZone: 'Asia/Kolkata',
+                          })
+                        : null
 
-                  return (
-                    <div
-                      key={ev.id}
-                      className="p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-start gap-4"
-                      style={{
-                        background: hasConflict
-                          ? 'rgba(245, 158, 11, 0.05)'
-                          : 'rgba(18, 24, 38, 0.75)',
-                        borderColor: hasConflict
-                          ? 'rgba(245, 158, 11, 0.35)'
-                          : 'rgba(255, 255, 255, 0.08)',
-                      }}
-                    >
-                      {/* Time Block */}
-                      <div className="sm:w-28 shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1 border-b sm:border-b-0 pb-2 sm:pb-0 border-white/10">
-                        <span className="font-extrabold text-sm text-white">
-                          {timeFormatted}
-                        </span>
-                        {endTimeFormatted && (
-                          <span className="text-[11px] text-white/50">
-                            to {endTimeFormatted}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mt-1">
-                          <CheckCircle2 size={10} />
-                          <span>Approved</span>
-                        </span>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-base text-white hover:text-brand-light transition-colors">
-                            {ev.title}
-                          </h3>
-                          <a
-                            href={ev.original_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white transition-colors shrink-0"
-                            title="Open Luma event ticket"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                        </div>
-
-                        {ev.venue_name && (
-                          <div className="flex items-center gap-1.5 text-xs text-white/60">
-                            <MapPin size={12} className="shrink-0 text-emerald-400" />
-                            <span className="truncate">{ev.venue_name}</span>
-                          </div>
-                        )}
-
-                        {hasConflict && (
-                          <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-center gap-1.5">
-                            <AlertTriangle size={12} className="shrink-0 text-amber-400" />
-                            <span>Overlaps with: {conflicts.get(ev.id)!.join(', ')}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="shrink-0 flex items-center sm:flex-col gap-2 pt-2 sm:pt-0">
-                        <a
-                          href={ev.original_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+                      return (
+                        <div
+                          key={ev.id}
+                          className="p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-start gap-4 shadow-xl bg-[#121826] hover:bg-[#162032] border-white/10 hover:border-brand/40"
                         >
-                          <Ticket size={12} />
-                          <span>Ticket</span>
-                        </a>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
+                          {/* Time Block */}
+                          <div className="sm:w-32 shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1.5 border-b sm:border-b-0 pb-3 sm:pb-0 border-white/10">
+                            <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-center w-full">
+                              <span className="font-extrabold text-sm text-white block">
+                                {timeFormatted}
+                              </span>
+                              {endTimeFormatted && (
+                                <span className="text-[11px] text-slate-400 block">
+                                  to {endTimeFormatted}
+                                </span>
+                              )}
+                            </div>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35">
+                              <CheckCircle2 size={10} className="text-emerald-400" />
+                              <span>Approved</span>
+                            </span>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-bold text-base text-white hover:text-brand-light transition-colors leading-snug">
+                                {ev.title}
+                              </h3>
+                              <a
+                                href={ev.original_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                                title="Open Luma event ticket"
+                              >
+                                <ExternalLink size={14} />
+                              </a>
+                            </div>
+
+                            {ev.venue_name && (
+                              <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                                <MapPin size={12} className="shrink-0 text-emerald-400" />
+                                <span className="truncate font-medium">{ev.venue_name}</span>
+                              </div>
+                            )}
+
+                            {hasConflict && (
+                              <div className="mt-2 p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-200 flex items-center gap-1.5 font-medium">
+                                <AlertTriangle size={12} className="shrink-0 text-amber-400" />
+                                <span>Overlaps with: {conflicts.get(ev.id)!.join(', ')}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="shrink-0 flex items-center sm:flex-col gap-2 pt-2 sm:pt-0">
+                            <a
+                              href={ev.original_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-brand hover:bg-brand-light text-white shadow-md transition-all hover:scale-105"
+                            >
+                              <Ticket size={13} />
+                              <span>Ticket</span>
+                            </a>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Luma Connect Modal */}
@@ -645,6 +704,13 @@ export default function SchedulePage() {
         isOpen={showConnectModal}
         onClose={() => setShowConnectModal(false)}
         onSuccess={updated => setLumaState(updated)}
+      />
+
+      {/* Add Custom Event Modal (With Login Check) */}
+      <AddCustomEventModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => setLumaState(getLumaConnection())}
       />
     </div>
   )
