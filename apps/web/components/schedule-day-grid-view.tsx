@@ -11,9 +11,14 @@ import {
   Ticket,
   AlertTriangle,
   CalendarDays,
-  Sparkles,
+  Check,
+  X,
+  Filter,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
 import type { CalendarEventItem } from './schedule-calendar-view'
+import { getAttendanceMap, setEventAttendance } from '@/lib/luma-storage'
 
 interface ScheduleDayGridViewProps {
   events: CalendarEventItem[]
@@ -30,41 +35,192 @@ interface PositionedEvent {
   colIndex: number
   totalCols: number
   hasConflict: boolean
+  isGoing: boolean
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7) // 7:00 AM to 11:00 PM (17 hours)
-const HOUR_HEIGHT = 80 // 80px per hour
+const HOUR_HEIGHT = 86 // 86px per hour for breathable content
 const START_HOUR = 7 // 7:00 AM start
 
-const COLOR_THEMES = [
-  {
-    bg: '#14171C',
-    border: '#292E36',
-    text: '#F5F5F0',
-    subtext: '#9298A3',
-    chip: '#191D24',
+interface ColorTheme {
+  accent: string
+  indicator: string
+  bg: string
+  border: string
+  borderHover: string
+  chipBg: string
+  chipText: string
+  timeBadgeBg: string
+  timeBadgeText: string
+  glow: string
+}
+
+const THEMES: Record<string, ColorTheme> = {
+  emerald: {
+    accent: '#10B981',
+    indicator: '#10B981',
+    bg: 'linear-gradient(145deg, rgba(16, 185, 129, 0.22) 0%, rgba(14, 22, 20, 0.96) 100%)',
+    border: 'rgba(16, 185, 129, 0.45)',
+    borderHover: 'rgba(16, 185, 129, 0.85)',
+    chipBg: 'rgba(16, 185, 129, 0.2)',
+    chipText: '#A7F3D0',
+    timeBadgeBg: 'rgba(16, 185, 129, 0.25)',
+    timeBadgeText: '#34D399',
+    glow: 'rgba(16, 185, 129, 0.3)',
   },
-  {
-    bg: '#14171C',
-    border: '#323842',
-    text: '#F5F5F0',
-    subtext: '#9298A3',
-    chip: '#191D24',
+  violet: {
+    accent: '#A855F7',
+    indicator: '#A855F7',
+    bg: 'linear-gradient(145deg, rgba(168, 85, 247, 0.22) 0%, rgba(20, 14, 28, 0.96) 100%)',
+    border: 'rgba(168, 85, 247, 0.45)',
+    borderHover: 'rgba(168, 85, 247, 0.85)',
+    chipBg: 'rgba(168, 85, 247, 0.2)',
+    chipText: '#E9D5FF',
+    timeBadgeBg: 'rgba(168, 85, 247, 0.25)',
+    timeBadgeText: '#C084FC',
+    glow: 'rgba(168, 85, 247, 0.3)',
   },
-  {
-    bg: '#14171C',
-    border: '#292E36',
-    text: '#F5F5F0',
-    subtext: '#9298A3',
-    chip: '#191D24',
+  sky: {
+    accent: '#38BDF8',
+    indicator: '#38BDF8',
+    bg: 'linear-gradient(145deg, rgba(56, 189, 248, 0.22) 0%, rgba(12, 20, 30, 0.96) 100%)',
+    border: 'rgba(56, 189, 248, 0.45)',
+    borderHover: 'rgba(56, 189, 248, 0.85)',
+    chipBg: 'rgba(56, 189, 248, 0.2)',
+    chipText: '#BAE6FD',
+    timeBadgeBg: 'rgba(56, 189, 248, 0.25)',
+    timeBadgeText: '#7DD3FC',
+    glow: 'rgba(56, 189, 248, 0.3)',
   },
+  amber: {
+    accent: '#F59E0B',
+    indicator: '#F59E0B',
+    bg: 'linear-gradient(145deg, rgba(245, 158, 11, 0.22) 0%, rgba(26, 18, 12, 0.96) 100%)',
+    border: 'rgba(245, 158, 11, 0.45)',
+    borderHover: 'rgba(245, 158, 11, 0.85)',
+    chipBg: 'rgba(245, 158, 11, 0.2)',
+    chipText: '#FDE68A',
+    timeBadgeBg: 'rgba(245, 158, 11, 0.25)',
+    timeBadgeText: '#FBBF24',
+    glow: 'rgba(245, 158, 11, 0.3)',
+  },
+  lime: {
+    accent: '#C6F36B',
+    indicator: '#C6F36B',
+    bg: 'linear-gradient(145deg, rgba(198, 243, 107, 0.2) 0%, rgba(18, 24, 16, 0.96) 100%)',
+    border: 'rgba(198, 243, 107, 0.45)',
+    borderHover: 'rgba(198, 243, 107, 0.85)',
+    chipBg: 'rgba(198, 243, 107, 0.2)',
+    chipText: '#E6FBB5',
+    timeBadgeBg: 'rgba(198, 243, 107, 0.25)',
+    timeBadgeText: '#C6F36B',
+    glow: 'rgba(198, 243, 107, 0.3)',
+  },
+  rose: {
+    accent: '#F43F5E',
+    indicator: '#F43F5E',
+    bg: 'linear-gradient(145deg, rgba(244, 63, 94, 0.22) 0%, rgba(28, 14, 18, 0.96) 100%)',
+    border: 'rgba(244, 63, 94, 0.45)',
+    borderHover: 'rgba(244, 63, 94, 0.85)',
+    chipBg: 'rgba(244, 63, 94, 0.2)',
+    chipText: '#FECDD3',
+    timeBadgeBg: 'rgba(244, 63, 94, 0.25)',
+    timeBadgeText: '#FB7185',
+    glow: 'rgba(244, 63, 94, 0.3)',
+  },
+  teal: {
+    accent: '#14B8A6',
+    indicator: '#14B8A6',
+    bg: 'linear-gradient(145deg, rgba(20, 184, 166, 0.22) 0%, rgba(14, 24, 22, 0.96) 100%)',
+    border: 'rgba(20, 184, 166, 0.45)',
+    borderHover: 'rgba(20, 184, 166, 0.85)',
+    chipBg: 'rgba(20, 184, 166, 0.2)',
+    chipText: '#99F6E4',
+    timeBadgeBg: 'rgba(20, 184, 166, 0.25)',
+    timeBadgeText: '#2DD4BF',
+    glow: 'rgba(20, 184, 166, 0.3)',
+  },
+  indigo: {
+    accent: '#6366F1',
+    indicator: '#6366F1',
+    bg: 'linear-gradient(145deg, rgba(99, 102, 241, 0.22) 0%, rgba(16, 18, 30, 0.96) 100%)',
+    border: 'rgba(99, 102, 241, 0.45)',
+    borderHover: 'rgba(99, 102, 241, 0.85)',
+    chipBg: 'rgba(99, 102, 241, 0.2)',
+    chipText: '#C7D2FE',
+    timeBadgeBg: 'rgba(99, 102, 241, 0.25)',
+    timeBadgeText: '#818CF8',
+    glow: 'rgba(99, 102, 241, 0.3)',
+  },
+}
+
+const THEME_CYCLE = [
+  THEMES.sky,
+  THEMES.violet,
+  THEMES.emerald,
+  THEMES.amber,
+  THEMES.lime,
+  THEMES.rose,
+  THEMES.teal,
+  THEMES.indigo,
 ]
+
+function getEventTheme(ev: CalendarEventItem, index: number): ColorTheme {
+  const cat = (ev.category || '').toLowerCase()
+  const eco = (ev.ecosystems?.[0] || '').toLowerCase()
+  const title = (ev.title || '').toLowerCase()
+
+  if (cat.includes('party') || cat.includes('social') || title.includes('mixer') || title.includes('night') || title.includes('dinner')) {
+    return THEMES.rose
+  }
+  if (cat.includes('founder') || cat.includes('investor') || eco.includes('bitcoin') || title.includes('vc')) {
+    return THEMES.amber
+  }
+  if (eco.includes('solana') || eco.includes('zk') || title.includes('cypherpunk') || title.includes('privacy')) {
+    return THEMES.violet
+  }
+  if (eco.includes('ethereum') || eco.includes('arbitrum') || title.includes('eth') || title.includes('arbiverse')) {
+    return THEMES.sky
+  }
+  if (cat.includes('hackathon') || title.includes('hacker') || eco.includes('polygon')) {
+    return THEMES.lime
+  }
+  if (cat.includes('workshop') || cat.includes('talk') || eco.includes('ai') || title.includes('builder')) {
+    return THEMES.teal
+  }
+  return THEME_CYCLE[index % THEME_CYCLE.length]
+}
 
 export function ScheduleDayGridView({
   events,
   conflicts,
   onAddEventClick,
 }: ScheduleDayGridViewProps) {
+  // Attendance tracking state: { [eventId]: 'going' | 'not_going' }
+  const [attendance, setAttendance] = useState<Record<string, 'going' | 'not_going'>>({})
+  const [filterMode, setFilterMode] = useState<'all' | 'going' | 'not_going'>('all')
+
+  useEffect(() => {
+    setAttendance(getAttendanceMap())
+    const handleSync = (e: Event) => {
+      const custom = e as CustomEvent<{ map: Record<string, 'going' | 'not_going'> }>
+      if (custom.detail?.map) setAttendance(custom.detail.map)
+    }
+    window.addEventListener('sidequest_attendance_sync', handleSync)
+    return () => window.removeEventListener('sidequest_attendance_sync', handleSync)
+  }, [])
+
+  const handleToggleAttendance = (eventId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    const current = attendance[eventId] || 'going'
+    const next = current === 'going' ? 'not_going' : 'going'
+    setAttendance(prev => ({ ...prev, [eventId]: next }))
+    setEventAttendance(eventId, next)
+  }
+
   // Collect all distinct days from events
   const daysWithEvents = useMemo(() => {
     const set = new Set<string>()
@@ -74,28 +230,45 @@ export function ScheduleDayGridView({
         set.add(d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))
       }
     }
-    const arr = Array.from(set).sort()
-    return arr
+    return Array.from(set).sort()
   }, [events])
 
   const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 
-  // Initialize selected day (today or first day with upcoming events)
+  // Initialize selected day
   const [selectedDayKey, setSelectedDayKey] = useState<string>(() => {
     if (daysWithEvents.includes(todayKey)) return todayKey
-    // find first upcoming
     const firstUpcoming = daysWithEvents.find(k => k >= todayKey)
     if (firstUpcoming) return firstUpcoming
     return daysWithEvents[0] || todayKey
   })
 
   // Group events by day
-  const dayEvents = useMemo(() => {
+  const allDayEvents = useMemo(() => {
     return events.filter(ev => {
       const d = new Date(ev.start_at)
       return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === selectedDayKey
     })
   }, [events, selectedDayKey])
+
+  // Filter day events based on Going/Not Going filter
+  const displayedDayEvents = useMemo(() => {
+    if (filterMode === 'going') {
+      return allDayEvents.filter(ev => (attendance[ev.id] || 'going') === 'going')
+    }
+    if (filterMode === 'not_going') {
+      return allDayEvents.filter(ev => attendance[ev.id] === 'not_going')
+    }
+    return allDayEvents
+  }, [allDayEvents, attendance, filterMode])
+
+  const goingCount = useMemo(() => {
+    return allDayEvents.filter(ev => (attendance[ev.id] || 'going') === 'going').length
+  }, [allDayEvents, attendance])
+
+  const notGoingCount = useMemo(() => {
+    return allDayEvents.filter(ev => attendance[ev.id] === 'not_going').length
+  }, [allDayEvents, attendance])
 
   // Selected Day Formatted
   const selectedDayFormatted = useMemo(() => {
@@ -123,7 +296,6 @@ export function ScheduleDayGridView({
     if (currentIndex > 0) {
       setSelectedDayKey(daysWithEvents[currentIndex - 1])
     } else {
-      // Step back 1 day in calendar
       const parts = selectedDayKey.split('-').map(Number)
       const prev = new Date(parts[0], parts[1] - 1, parts[2] - 1)
       setSelectedDayKey(prev.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))
@@ -135,7 +307,6 @@ export function ScheduleDayGridView({
     if (currentIndex >= 0 && currentIndex < daysWithEvents.length - 1) {
       setSelectedDayKey(daysWithEvents[currentIndex + 1])
     } else {
-      // Step forward 1 day in calendar
       const parts = selectedDayKey.split('-').map(Number)
       const next = new Date(parts[0], parts[1] - 1, parts[2] + 1)
       setSelectedDayKey(next.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))
@@ -144,14 +315,14 @@ export function ScheduleDayGridView({
 
   // Calculate side-by-side columns and vertical positioning for events
   const positionedEvents: PositionedEvent[] = useMemo(() => {
-    if (dayEvents.length === 0) return []
+    if (displayedDayEvents.length === 0) return []
 
     // 1. Calculate start/end decimal hours
-    const parsed = dayEvents.map(ev => {
+    const parsed = displayedDayEvents.map(ev => {
       const s = new Date(ev.start_at)
       const startHour = s.getHours() + s.getMinutes() / 60
 
-      let endHour = startHour + 2 // default 2 hours duration
+      let endHour = startHour + 2
       if (ev.end_at) {
         const e = new Date(ev.end_at)
         const diff = (e.getTime() - s.getTime()) / 3600000
@@ -159,14 +330,15 @@ export function ScheduleDayGridView({
           endHour = startHour + diff
         }
       }
-      // clamp to maximum 24
       endHour = Math.min(24, Math.max(startHour + 0.5, endHour))
 
+      const isGoing = (attendance[ev.id] || 'going') === 'going'
       return {
         event: ev,
         startHour,
         endHour,
-        hasConflict: conflicts.has(ev.id),
+        hasConflict: isGoing && conflicts.has(ev.id),
+        isGoing,
       }
     }).sort((a, b) => a.startHour - b.startHour || (b.endHour - a.startHour) - (a.endHour - b.startHour))
 
@@ -196,7 +368,7 @@ export function ScheduleDayGridView({
     const result: PositionedEvent[] = []
 
     for (const cluster of clusters) {
-      const columns: Array<number[]> = [] // stores endHour of events in each column
+      const columns: Array<number[]> = []
 
       for (const item of cluster) {
         let placed = false
@@ -205,7 +377,7 @@ export function ScheduleDayGridView({
           if (item.startHour >= lastEnd) {
             columns[col].push(item.endHour)
             const top = Math.max(0, (item.startHour - START_HOUR) * HOUR_HEIGHT)
-            const height = Math.max(50, (item.endHour - item.startHour) * HOUR_HEIGHT - 6)
+            const height = Math.max(70, (item.endHour - item.startHour) * HOUR_HEIGHT - 6)
             result.push({
               event: item.event,
               top,
@@ -213,8 +385,9 @@ export function ScheduleDayGridView({
               startHourDecimal: item.startHour,
               endHourDecimal: item.endHour,
               colIndex: col,
-              totalCols: 1, // updated below
+              totalCols: 1,
               hasConflict: item.hasConflict,
+              isGoing: item.isGoing,
             })
             placed = true
             break
@@ -225,7 +398,7 @@ export function ScheduleDayGridView({
           const col = columns.length
           columns.push([item.endHour])
           const top = Math.max(0, (item.startHour - START_HOUR) * HOUR_HEIGHT)
-          const height = Math.max(50, (item.endHour - item.startHour) * HOUR_HEIGHT - 6)
+          const height = Math.max(70, (item.endHour - item.startHour) * HOUR_HEIGHT - 6)
           result.push({
             event: item.event,
             top,
@@ -235,11 +408,11 @@ export function ScheduleDayGridView({
             colIndex: col,
             totalCols: 1,
             hasConflict: item.hasConflict,
+            isGoing: item.isGoing,
           })
         }
       }
 
-      // Update totalCols for all items in this cluster
       const totalColsInCluster = columns.length
       const clusterEventIds = new Set(cluster.map(c => c.event.id))
       for (const res of result) {
@@ -250,20 +423,19 @@ export function ScheduleDayGridView({
     }
 
     return result
-  }, [dayEvents, conflicts])
+  }, [displayedDayEvents, conflicts, attendance])
 
   // Scroll to early morning or first event on initial load
   const containerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (containerRef.current) {
-      // Find earliest event or default to 9 AM (2 * HOUR_HEIGHT)
       const earliest = positionedEvents[0]?.top ?? (9 - START_HOUR) * HOUR_HEIGHT
       containerRef.current.scrollTop = Math.max(0, earliest - 40)
     }
   }, [selectedDayKey, positionedEvents])
 
   return (
-    <div className="relative rounded-xl border border-[#292E36] bg-[#101318] shadow-sm overflow-hidden animate-fade-in">
+    <div className="relative rounded-xl border border-[#292E36] bg-[#101318] shadow-2xl overflow-hidden animate-fade-in">
       {/* Top Day Switcher Bar */}
       <div className="p-4 bg-[#14171C] border-b border-[#292E36] flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
@@ -285,7 +457,7 @@ export function ScheduleDayGridView({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-[#191D24] border border-[#292E36] flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 rounded-lg bg-[#191D24] border border-[#292E36] flex flex-col items-center justify-center text-center shadow-inner">
               <span className="text-[9px] font-mono font-semibold uppercase text-[#C6F36B] leading-none">
                 {selectedDayFormatted.weekday}
               </span>
@@ -303,15 +475,23 @@ export function ScheduleDayGridView({
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-[#9298A3] font-mono">
-                {dayEvents.length} approved ticket{dayEvents.length !== 1 ? 's' : ''} on this day
+              <p className="text-xs text-[#9298A3] font-mono flex items-center gap-2">
+                <span>{allDayEvents.length} event{allDayEvents.length !== 1 ? 's' : ''} on this day</span>
+                <span>·</span>
+                <span className="text-[#10B981]">{goingCount} Going</span>
+                {notGoingCount > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="text-[#EF4444]">{notGoingCount} Not Going</span>
+                  </>
+                )}
               </p>
             </div>
           </div>
         </div>
 
         {/* Quick Date Pills Carousel */}
-        <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-1 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 scrollbar-none">
           {daysWithEvents.map(key => {
             const parts = key.split('-').map(Number)
             const d = new Date(parts[0], parts[1] - 1, parts[2])
@@ -325,7 +505,7 @@ export function ScheduleDayGridView({
                 onClick={() => setSelectedDayKey(key)}
                 className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors shrink-0 flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-[#191D24] text-[#F5F5F0] border border-[#C6F36B]'
+                    ? 'bg-[#191D24] text-[#F5F5F0] border border-[#C6F36B] shadow-sm'
                     : isToday
                     ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/25 hover:bg-[#10B981]/20'
                     : 'bg-[#14171C] hover:bg-[#191D24] text-[#9298A3] hover:text-[#F5F5F0] border border-[#292E36]'
@@ -338,16 +518,53 @@ export function ScheduleDayGridView({
         </div>
       </div>
 
-      {/* Sub Bar */}
-      <div className="px-4 py-2 bg-[#14171C]/70 border-b border-[#292E36] flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2 text-[#9298A3] font-mono text-[11px]">
-          <span>Timeline View · Asia/Kolkata (IST)</span>
+      {/* Sub Bar: Filter by Going / Not Going + Add Event */}
+      <div className="px-4 py-2.5 bg-[#14171C]/90 border-b border-[#292E36] flex items-center justify-between gap-3 text-xs flex-wrap">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-mono text-[#9298A3] hidden sm:inline">Timeline · Asia/Kolkata</span>
+
+          {/* Going / Not Going Segmented Filter */}
+          <div className="flex items-center bg-[#101318] p-0.5 rounded-md border border-[#292E36] text-[11px] font-mono">
+            <button
+              onClick={() => setFilterMode('all')}
+              className={`px-2.5 py-1 rounded transition-colors ${
+                filterMode === 'all'
+                  ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36]'
+                  : 'text-[#9298A3] hover:text-[#F5F5F0]'
+              }`}
+            >
+              All ({allDayEvents.length})
+            </button>
+            <button
+              onClick={() => setFilterMode('going')}
+              className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${
+                filterMode === 'going'
+                  ? 'bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40'
+                  : 'text-[#9298A3] hover:text-[#10B981]'
+              }`}
+            >
+              <Check size={11} className="text-[#10B981]" />
+              <span>Going ({goingCount})</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('not_going')}
+              className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${
+                filterMode === 'not_going'
+                  ? 'bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/40'
+                  : 'text-[#9298A3] hover:text-[#EF4444]'
+              }`}
+            >
+              <X size={11} className="text-[#EF4444]" />
+              <span>Not Going ({notGoingCount})</span>
+            </button>
+          </div>
         </div>
+
         <button
           onClick={onAddEventClick}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors shadow-sm ml-auto"
         >
-          <Plus size={12} className="text-[#C6F36B]" />
+          <Plus size={13} className="text-[#C6F36B]" />
           <span>Add Event</span>
         </button>
       </div>
@@ -355,20 +572,20 @@ export function ScheduleDayGridView({
       {/* Scrollable Hourly Timeline Container */}
       <div
         ref={containerRef}
-        className="relative overflow-y-auto max-h-[680px] bg-[#0c101a]"
+        className="relative overflow-y-auto max-h-[700px] bg-[#0A0D12] select-none"
       >
         <div
-          className="relative grid grid-cols-[70px_1fr] divide-x divide-white/10"
+          className="relative grid grid-cols-[64px_1fr] divide-x divide-[#292E36]/40"
           style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}
         >
           {/* Time Gutter (Left) */}
-          <div className="relative select-none">
+          <div className="relative select-none bg-[#0D1016]">
             {HOURS.map((h, i) => {
               const displayHour = h > 12 ? `${h - 12} pm` : h === 12 ? '12 pm' : `${h} am`
               return (
                 <div
                   key={h}
-                  className="absolute left-0 right-0 pr-2.5 text-right font-semibold text-xs text-slate-400/80 -translate-y-2.5"
+                  className="absolute left-0 right-0 pr-2.5 text-right font-mono text-[11px] text-[#5A6270] -translate-y-2.5 font-medium"
                   style={{ top: `${i * HOUR_HEIGHT}px` }}
                 >
                   {displayHour}
@@ -379,11 +596,11 @@ export function ScheduleDayGridView({
 
           {/* Grid Canvas & Event Columns (Right) */}
           <div className="relative">
-            {/* Horizontal Hour Lines */}
+            {/* Horizontal Hour Grid Lines */}
             {HOURS.map((h, i) => (
               <div
                 key={h}
-                className="absolute left-0 right-0 border-t border-white/[0.07]"
+                className="absolute left-0 right-0 border-t border-[#292E36]/30"
                 style={{ top: `${i * HOUR_HEIGHT}px` }}
               />
             ))}
@@ -391,26 +608,41 @@ export function ScheduleDayGridView({
             {/* Empty Day State */}
             {positionedEvents.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                <CalendarDays size={40} className="mb-3 text-slate-600" />
-                <h4 className="text-base font-bold text-white mb-1">
-                  No approved events on {selectedDayFormatted.full}
+                <CalendarDays size={38} className="mb-3 text-[#5A6270]" />
+                <h4 className="text-sm font-semibold text-[#F5F5F0] mb-1">
+                  {filterMode === 'all'
+                    ? `No events on ${selectedDayFormatted.full}`
+                    : filterMode === 'going'
+                    ? `No events marked "Going" on this day`
+                    : `No events marked "Not Going" on this day`}
                 </h4>
-                <p className="text-xs text-slate-400 max-w-sm mb-4">
-                  You don't have any tickets scheduled for this date. Check another day using the date tabs above or add an event manually.
+                <p className="text-xs text-[#9298A3] max-w-sm mb-4 font-mono">
+                  {filterMode !== 'all'
+                    ? 'Switch back to "All" to inspect other events on your schedule.'
+                    : "You don't have any tickets scheduled for this date. Check another day using the date tabs above or add an event manually."}
                 </p>
-                <button
-                  onClick={onAddEventClick}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand hover:bg-brand-light text-white shadow-lg transition-all"
-                >
-                  <Plus size={13} />
-                  <span>Add Event for {selectedDayFormatted.weekday} {selectedDayFormatted.dayNum}</span>
-                </button>
+                {filterMode !== 'all' ? (
+                  <button
+                    onClick={() => setFilterMode('all')}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-mono font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
+                  >
+                    <span>View All Events</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={onAddEventClick}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] shadow-sm transition-all"
+                  >
+                    <Plus size={13} />
+                    <span>Add Event for {selectedDayFormatted.weekday} {selectedDayFormatted.dayNum}</span>
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Positioned Events Cards (Side-by-Side Overlap Layout) */}
+            {/* Colourful Positioned Event Cards (Side-by-Side Overlap Layout) */}
             {positionedEvents.map((item, idx) => {
-              const theme = COLOR_THEMES[idx % COLOR_THEMES.length]
+              const theme = getEventTheme(item.event, idx)
               const ev = item.event
               const s = new Date(ev.start_at)
               const timeStr = s.toLocaleTimeString('en-US', {
@@ -422,73 +654,122 @@ export function ScheduleDayGridView({
 
               const colWidthPercent = 100 / item.totalCols
               const leftPercent = item.colIndex * colWidthPercent
+              const isGoing = item.isGoing
 
               return (
                 <div
                   key={ev.id}
-                  className="absolute p-3 rounded-2xl shadow-xl transition-all hover:z-30 hover:scale-[1.01] flex flex-col justify-between overflow-hidden group cursor-pointer border"
+                  className={`absolute rounded-xl shadow-lg transition-all duration-150 hover:z-30 hover:scale-[1.01] flex flex-col justify-between overflow-hidden group cursor-pointer border ${
+                    !isGoing ? 'opacity-55 hover:opacity-90 grayscale-[40%]' : ''
+                  }`}
                   style={{
                     top: `${item.top}px`,
                     height: `${item.height}px`,
                     left: `calc(${leftPercent}% + 4px)`,
                     width: `calc(${colWidthPercent}% - 8px)`,
-                    background: theme.bg,
-                    borderColor: theme.border,
+                    background: isGoing ? theme.bg : 'rgba(20, 23, 28, 0.85)',
+                    borderColor: isGoing ? theme.border : '#292E36',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
+                    boxShadow: isGoing ? `0 4px 20px ${theme.glow}` : 'none',
                   }}
                   onClick={() => {
                     if (ev.original_url) window.open(ev.original_url, '_blank')
                   }}
-                  title={`${ev.title}\n${ev.venue_name || ''}\nStarts: ${timeStr}`}
+                  title={`${ev.title}\n${ev.venue_name || ''}\nStarts: ${timeStr}\nStatus: ${isGoing ? 'Going' : 'Not Going'}`}
                 >
-                  {/* Event Content Header */}
-                  <div className="space-y-1 overflow-hidden">
-                    <div className="flex items-center justify-between gap-1">
-                      <span
-                        className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wide shrink-0 border"
-                        style={{
-                          background: theme.chip,
-                          borderColor: theme.border,
-                          color: theme.text,
-                        }}
-                      >
-                        {timeStr}
-                      </span>
+                  {/* Left Colored Accent Bar */}
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-1 transition-all group-hover:w-1.5"
+                    style={{ background: isGoing ? theme.indicator : '#5A6270' }}
+                  />
 
-                      {item.hasConflict && (
-                        <span className="p-0.5 rounded bg-amber-500/20 text-amber-300" title="Time conflict with other event">
-                          <AlertTriangle size={12} />
+                  {/* Event Content Header */}
+                  <div className="p-3 pl-3.5 space-y-1.5 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wide shrink-0 border"
+                          style={{
+                            background: isGoing ? theme.timeBadgeBg : 'rgba(255, 255, 255, 0.05)',
+                            borderColor: isGoing ? theme.border : '#292E36',
+                            color: isGoing ? theme.timeBadgeText : '#9298A3',
+                          }}
+                        >
+                          {timeStr}
                         </span>
-                      )}
+
+                        {ev.category && (
+                          <span
+                            className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider border truncate max-w-[100px]"
+                            style={{
+                              background: isGoing ? theme.chipBg : 'rgba(255, 255, 255, 0.04)',
+                              borderColor: isGoing ? theme.border : '#292E36',
+                              color: isGoing ? theme.chipText : '#9298A3',
+                            }}
+                          >
+                            {ev.category.replace('_', ' ')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Interactive Going / Not Going Button */}
+                      <button
+                        onClick={(e) => handleToggleAttendance(ev.id, e)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-all flex items-center gap-1 shrink-0 shadow-sm border ${
+                          isGoing
+                            ? 'bg-[#10B981]/25 text-[#10B981] border-[#10B981]/50 hover:bg-[#EF4444]/25 hover:text-[#EF4444] hover:border-[#EF4444]/50'
+                            : 'bg-[#EF4444]/20 text-[#EF4444] border-[#EF4444]/40 hover:bg-[#10B981]/25 hover:text-[#10B981] hover:border-[#10B981]/50'
+                        }`}
+                        title={isGoing ? 'Click to mark Not Going' : 'Click to mark Going'}
+                      >
+                        {isGoing ? (
+                          <>
+                            <Check size={11} className="stroke-[3] text-[#10B981]" />
+                            <span>Going</span>
+                          </>
+                        ) : (
+                          <>
+                            <X size={11} className="stroke-[3] text-[#EF4444]" />
+                            <span>Not Going</span>
+                          </>
+                        )}
+                      </button>
                     </div>
 
                     <h4
-                      className="font-extrabold text-xs md:text-sm leading-snug line-clamp-2 transition-colors group-hover:text-brand-light"
-                      style={{ color: theme.text }}
+                      className={`font-bold text-xs md:text-sm leading-snug line-clamp-2 transition-colors ${
+                        !isGoing ? 'line-through text-[#9298A3]' : 'text-[#F5F5F0]'
+                      }`}
                     >
                       {ev.title}
                     </h4>
 
                     {ev.venue_name && (
-                      <p
-                        className="text-[11px] leading-tight line-clamp-3 font-medium flex items-start gap-1"
-                        style={{ color: theme.subtext }}
-                      >
-                        <MapPin size={11} className="shrink-0 mt-0.5 opacity-80" />
-                        <span>{ev.venue_name}{ev.venue_address ? `, ${ev.venue_address}` : ''}</span>
+                      <p className="text-[11px] leading-tight line-clamp-2 font-mono flex items-start gap-1 text-[#9298A3]">
+                        <MapPin size={11} className="shrink-0 mt-0.5 text-[#5A6270]" />
+                        <span className="truncate">{ev.venue_name}{ev.venue_address ? `, ${ev.venue_address}` : ''}</span>
                       </p>
                     )}
                   </div>
 
                   {/* Card Bottom / Actions */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-white/10 mt-auto">
-                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      Approved
-                    </span>
+                  <div className="px-3 py-1.5 bg-[#0C0F14]/70 border-t border-[#292E36]/60 flex items-center justify-between gap-2 mt-auto text-[11px] font-mono">
+                    <div className="flex items-center gap-1.5">
+                      {item.hasConflict ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#F59E0B] bg-[#F59E0B]/15 px-1.5 py-0.5 rounded border border-[#F59E0B]/30" title="Overlaps with another event at this time">
+                          <AlertTriangle size={10} />
+                          <span>Overlap</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#10B981] flex items-center gap-1 font-semibold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                          <span>Approved</span>
+                        </span>
+                      )}
+                    </div>
 
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-white/80 group-hover:text-white">
+                    <span className="flex items-center gap-1 text-[#9298A3] group-hover:text-[#F5F5F0] transition-colors">
                       <span>Ticket</span>
                       <ExternalLink size={10} />
                     </span>
@@ -503,7 +784,7 @@ export function ScheduleDayGridView({
       {/* Floating Action Button (FAB) */}
       <button
         onClick={onAddEventClick}
-        className="fixed md:absolute bottom-6 right-6 z-40 w-12 h-12 rounded-xl flex items-center justify-center bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] shadow-lg transition-transform active:scale-95 group"
+        className="fixed md:absolute bottom-6 right-6 z-40 w-12 h-12 rounded-xl flex items-center justify-center bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] shadow-xl transition-transform active:scale-95 group"
         title="Add Event"
         aria-label="Add Event"
       >

@@ -149,3 +149,41 @@ export function addCustomEvent(event: ApprovedLumaTicket, userId?: string | null
   }
   saveLumaConnection(updatedState, userId)
 }
+
+const ATTENDANCE_KEY_PREFIX = 'sidequest_event_attendance_'
+
+export function getAttendanceMap(userId?: string | null): Record<string, 'going' | 'not_going'> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const uid = userId !== undefined ? userId : getActiveUserId()
+    const key = uid ? `${ATTENDANCE_KEY_PREFIX}${uid}` : `${ATTENDANCE_KEY_PREFIX}guest`
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function setEventAttendance(
+  eventId: string,
+  status: 'going' | 'not_going',
+  userId?: string | null
+): Record<string, 'going' | 'not_going'> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const uid = userId !== undefined ? userId : getActiveUserId()
+    const key = uid ? `${ATTENDANCE_KEY_PREFIX}${uid}` : `${ATTENDANCE_KEY_PREFIX}guest`
+    const current = getAttendanceMap(userId)
+    const updated = { ...current, [eventId]: status }
+    localStorage.setItem(key, JSON.stringify(updated))
+    window.dispatchEvent(
+      new CustomEvent('sidequest_attendance_sync', {
+        detail: { eventId, status, map: updated },
+      })
+    )
+    return updated
+  } catch (err) {
+    console.error('Failed to set attendance:', err)
+    return {}
+  }
+}
