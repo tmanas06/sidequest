@@ -121,13 +121,23 @@ export function saveLumaConnection(state: LumaConnectionState, userId?: string |
     window.dispatchEvent(new CustomEvent('sidequest_luma_sync', { detail: stateToSave }))
 
     // Persist to Supabase Auth user_metadata so user never has to reconnect across devices/logins
+    // CRITICAL: NEVER store raw events array in Supabase user_metadata!
+    // user_metadata is encoded directly inside the JWT token cookie (`sb-...-auth-token`).
+    // Storing event arrays bloats cookies past Node HTTP header limits causing HTTP 431 & invalid flow state.
     if (resolvedId && stateToSave.isConnected) {
+      const leanMeta = {
+        isConnected: true,
+        calendarUrl: stateToSave.calendarUrl,
+        syncedAt: stateToSave.syncedAt,
+        approvedCount: stateToSave.approvedCount,
+        accountLabel: stateToSave.accountLabel || 'Luma User',
+      }
       import('@/lib/supabase/client')
         .then(({ createClient }) => {
           const db = createClient()
           db.auth.updateUser({
             data: {
-              luma_connection: stateToSave,
+              luma_connection: leanMeta,
             },
           }).catch(() => {})
         })
@@ -184,29 +194,52 @@ export function syncUserLuma(user: any): LumaConnectionState {
 
   setActiveUserId(user.id)
   const local = getLumaConnection(user.id)
+  const cloudConn = user.user_metadata?.luma_connection
+
+  // If cloud metadata contains bloated events array, immediately replace it with lean metadata
+  if (cloudConn && (cloudConn.events || JSON.stringify(cloudConn).length > 500)) {
+    const lean = {
+      isConnected: !!cloudConn.isConnected,
+      calendarUrl: cloudConn.calendarUrl,
+      syncedAt: cloudConn.syncedAt,
+      approvedCount: cloudConn.approvedCount || (Array.isArray(cloudConn.events) ? cloudConn.events.length : 0),
+      accountLabel: cloudConn.accountLabel || 'Luma User',
+    }
+    import('@/lib/supabase/client').then(({ createClient }) => {
+      const db = createClient()
+      db.auth.updateUser({
+        data: { luma_connection: lean },
+      }).catch(() => {})
+    })
+  }
 
   // 1. If local already has valid connected tickets, ensure cloud metadata is up-to-date
   if (local.isConnected && local.events.length > 0) {
-    const cloudConn = user.user_metadata?.luma_connection
-    if (!cloudConn || !cloudConn.isConnected || cloudConn.events?.length !== local.events.length) {
+    if (!cloudConn || !cloudConn.isConnected || cloudConn.approvedCount !== local.approvedCount) {
       saveLumaConnection(local, user.id)
     }
     return local
   }
 
-  // 2. If local is empty, but cloud has previously saved Luma connection, restore it!
-  const cloudConn = user.user_metadata?.luma_connection
-  if (cloudConn && cloudConn.isConnected && Array.isArray(cloudConn.events) && cloudConn.events.length > 0) {
-    const restored: LumaConnectionState = {
-      ...cloudConn,
-      userId: user.id,
-    }
-    const key = getLumaStorageKey(user.id)
-    try {
-      localStorage.setItem(key, JSON.stringify(restored))
-      window.dispatchEvent(new CustomEvent('sidequest_luma_sync', { detail: restored }))
-    } catch {}
-    return restored
+  // 2. If local is empty, but cloud has previously saved calendarUrl, restore by fetching tickets in background
+  if (cloudConn && cloudConn.isConnected && cloudConn.calendarUrl) {
+    fetch(`/api/luma/sync?url=${encodeURIComponent(cloudConn.calendarUrl)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.events && Array.isArray(data.events)) {
+          const restored: LumaConnectionState = {
+            isConnected: true,
+            calendarUrl: cloudConn.calendarUrl,
+            syncedAt: data.syncedAt || cloudConn.syncedAt,
+            approvedCount: data.events.length,
+            events: data.events,
+            accountLabel: cloudConn.accountLabel || 'Luma User',
+            userId: user.id,
+          }
+          saveLumaConnection(restored, user.id)
+        }
+      })
+      .catch(() => {})
   }
 
   return local

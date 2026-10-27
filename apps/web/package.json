@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "NODE_OPTIONS='--max-http-header-size=65536' next dev --webpack",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "NODE_OPTIONS='--max-http-header-size=65536' next start"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -165,9 +165,25 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-xs px-3 py-2 rounded-lg bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/25">
-              {error}
-            </p>
+            <div className="text-xs px-3 py-2.5 rounded-lg bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/25 space-y-1.5">
+              <p>{error}</p>
+              {(error.includes('flow state') || error.includes('cookie') || error.includes('token') || error.includes('header')) && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (typeof document !== 'undefined') {
+                      document.cookie.split(';').forEach(c => {
+                        document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/')
+                      })
+                    }
+                    window.location.href = '/auth/signout'
+                  }}
+                  className="text-[11px] underline font-medium text-[#F5F5F0] hover:text-[#C6F36B] block cursor-pointer"
+                >
+                  Click here to reset cookies & retry clean sign-in
+                </button>
+              )}
+            </div>
           )}
 
           <button

@@ -34,6 +34,21 @@ async function handleSignOut(request: NextRequest) {
     }
   )
 
-  await supabase.auth.signOut()
+  try {
+    await supabase.auth.signOut()
+  } catch {}
+
+  // Explicitly delete any chunked cookies to guarantee HTTP header recovery
+  request.cookies.getAll().forEach(cookie => {
+    if (cookie.name.startsWith('sb-') || cookie.name.includes('auth-token') || cookie.name.includes('supabase')) {
+      supabaseResponse.cookies.set(cookie.name, '', {
+        path: '/',
+        maxAge: 0,
+        expires: new Date(0),
+      })
+      supabaseResponse.cookies.delete(cookie.name)
+    }
+  })
+
   return supabaseResponse
 }
