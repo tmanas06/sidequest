@@ -60,9 +60,10 @@ function parseUserIcs(icsText: string): ParsedLumaEvent[] {
     }
 
     const status = (getField('STATUS') || 'CONFIRMED').toUpperCase()
-    // Luma personal ICS only includes approved/confirmed tickets.
-    // If status is TENTATIVE, CANCELLED, or WAITLIST, skip it!
-    if (status === 'CANCELLED' || status === 'TENTATIVE' || status === 'WAITLIST') {
+    // Luma personal ICS feeds mark all attendee registrations with STATUS:TENTATIVE
+    // (RFC 5545 standard for attendee subscription calendars).
+    // Only skip if the event ticket was explicitly cancelled.
+    if (status === 'CANCELLED' || status === 'CANCELED') {
       continue
     }
 
@@ -79,11 +80,22 @@ function parseUserIcs(icsText: string): ParsedLumaEvent[] {
       .replace(/\\n/g, '\n')
       .trim()
 
+    const uid = getField('UID')
+
     // Detect event URL from description if URL header is omitted
     let url = rawUrl
     if (!url) {
       const urlMatch = description.match(/https?:\/\/(?:www\.)?lu\.?ma\/[a-zA-Z0-9_-]+/i)
       if (urlMatch) url = urlMatch[0]
+    }
+
+    let slug = extractLumaSlug(url)
+    if (!slug && uid) {
+      const uidMatch = uid.match(/^(?:evt-|event-)?([a-zA-Z0-9_-]+)@/i)
+      if (uidMatch) slug = uidMatch[1].toLowerCase()
+    }
+    if (!url && slug) {
+      url = `https://lu.ma/${slug}`
     }
 
     const location = getField('LOCATION').replace(/\\,/g, ',').replace(/\\n/g, ' ').trim()
@@ -97,7 +109,7 @@ function parseUserIcs(icsText: string): ParsedLumaEvent[] {
       events.push({
         title: summary,
         url,
-        slug: extractLumaSlug(url),
+        slug,
         location,
         status: 'approved',
         startAt,

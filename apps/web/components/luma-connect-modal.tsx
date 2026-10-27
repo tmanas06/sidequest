@@ -14,6 +14,9 @@ import {
   AlertCircle,
   Clock,
   MapPin,
+  ClipboardPaste,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import {
   getLumaConnection,
@@ -32,11 +35,13 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
   const [calendarUrl, setCalendarUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showVisualScreenshots, setShowVisualScreenshots] = useState(true)
   const [connection, setConnection] = useState<LumaConnectionState>({
     isConnected: false,
     approvedCount: 0,
     events: [],
   })
+
 
   useEffect(() => {
     if (isOpen) {
@@ -97,7 +102,7 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
       <div
-        className="relative w-full max-w-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl transition-all"
+        className="relative w-full max-w-2xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl transition-all"
         style={{
           background: 'linear-gradient(180deg, #121826 0%, #0a0d14 100%)',
           color: 'var(--color-text-primary)',
@@ -229,54 +234,173 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
           ) : (
             <>
               {/* Educational info card */}
+
               <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 space-y-2 text-xs text-purple-200">
-                <div className="flex items-center gap-2 font-semibold text-purple-300">
-                  <Sparkles size={14} />
-                  <span>How Luma Approved Sync Works</span>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-semibold text-purple-300">
+                    <Sparkles size={14} />
+                    <span>How Luma Approved Sync Works</span>
+                  </div>
+                  <a
+                    href="https://lu.ma/settings"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 font-bold border border-pink-500/30 transition-colors"
+                  >
+                    <span>Open lu.ma/settings</span>
+                    <ExternalLink size={10} />
+                  </a>
                 </div>
                 <p className="leading-relaxed text-purple-200/80">
                   Luma automatically generates a private calendar subscription for your account containing <strong>only events with confirmed, approved tickets</strong>. SideQuest connects to this feed so your agenda stays 100% accurate.
                 </p>
               </div>
 
-              {/* Instructions steps */}
-              <div className="space-y-2 text-xs">
-                <p className="font-semibold text-white/90">How to get your private calendar link:</p>
-                <ol className="list-decimal list-inside space-y-1.5 text-white/70 pl-1">
-                  <li>
-                    Open{' '}
-                    <a
-                      href="https://lu.ma/calendar"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-pink-400 underline font-medium inline-flex items-center gap-0.5 hover:text-pink-300"
-                    >
-                      lu.ma/calendar
-                      <ExternalLink size={10} />
-                    </a>{' '}
-                    in your browser
-                  </li>
-                  <li>Click on <strong>“Subscribe to Calendar”</strong></li>
-                  <li>Copy the private subscription URL (starts with <code className="px-1 py-0.5 rounded bg-white/10 text-pink-300 font-mono">webcal://</code> or <code className="px-1 py-0.5 rounded bg-white/10 text-pink-300 font-mono">https://</code>)</li>
-                  <li>Paste it into the field below</li>
-                </ol>
+              {/* Instructions steps with screenshots */}
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-white/90 text-sm">Step-by-Step Visual Guide:</p>
+                  <button
+                    onClick={() => setShowVisualScreenshots(v => !v)}
+                    className="text-pink-400 hover:text-pink-300 text-xs font-semibold flex items-center gap-1"
+                  >
+                    <span>{showVisualScreenshots ? 'Collapse Images' : 'View Screenshots'}</span>
+                    {showVisualScreenshots ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Step 1 */}
+                  <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-pink-500/25 text-pink-300 font-bold flex items-center justify-center shrink-0 text-[11px] mt-0.5">
+                        1
+                      </span>
+                      <div>
+                        <p className="font-semibold text-white">
+                          Go to{' '}
+                          <a
+                            href="https://lu.ma/settings"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-pink-400 underline font-bold inline-flex items-center gap-0.5 hover:text-pink-300"
+                          >
+                            lu.ma/settings
+                            <ExternalLink size={10} />
+                          </a>{' '}
+                          ➔ Click the <span className="text-pink-300 font-bold">Account</span> tab.
+                        </p>
+                        <p className="text-white/60 text-[11px] mt-0.5">
+                          Scroll down to <strong>Account Syncing</strong> and click the{' '}
+                          <span className="px-1.5 py-0.5 rounded bg-white/10 font-bold text-white">
+                            Add iCal Subscription
+                          </span>{' '}
+                          button.
+                        </p>
+                      </div>
+                    </div>
+
+                    {showVisualScreenshots && (
+                      <div className="mt-2 rounded-lg overflow-hidden border border-white/15 bg-black/60 shadow-lg">
+                        <img
+                          src="/guides/luma-step1-account-syncing.png"
+                          alt="Luma Account Settings - Calendar Syncing button"
+                          className="w-full object-cover max-h-48 hover:max-h-96 transition-all duration-300 cursor-pointer"
+                          title="Click to view full screenshot: Account Settings -> Calendar Syncing"
+                        />
+                        <div className="p-2 bg-black/80 border-t border-white/10 text-[10px] text-white/60 flex items-center justify-between">
+                          <span>Screenshot 1: Settings ➔ Account ➔ Calendar Syncing</span>
+                          <span className="text-pink-400 font-medium">Click "Add iCal Subscription"</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-pink-500/25 text-pink-300 font-bold flex items-center justify-center shrink-0 text-[11px] mt-0.5">
+                        2
+                      </span>
+                      <div>
+                        <p className="font-semibold text-white">
+                          In the popup, click{' '}
+                          <span className="text-emerald-400 font-bold">
+                            “Copy URL to Clipboard”
+                          </span>
+                        </p>
+                        <p className="text-white/60 text-[11px] mt-0.5">
+                          In the “Add iCal Subscription” dialog, click the text link at the very bottom below the calendar buttons.
+                        </p>
+                      </div>
+                    </div>
+
+                    {showVisualScreenshots && (
+                      <div className="mt-2 rounded-lg overflow-hidden border border-white/15 bg-black/60 shadow-lg">
+                        <img
+                          src="/guides/luma-step2-copy-clipboard.png"
+                          alt="Luma Add iCal Subscription modal - Copy URL to Clipboard link"
+                          className="w-full object-cover max-h-48 hover:max-h-96 transition-all duration-300 cursor-pointer"
+                          title="Click to view full screenshot: Copy URL to Clipboard"
+                        />
+                        <div className="p-2 bg-black/80 border-t border-white/10 text-[10px] text-white/60 flex items-center justify-between">
+                          <span>Screenshot 2: Add iCal Subscription modal</span>
+                          <span className="text-emerald-400 font-medium">Click "Copy URL to Clipboard"</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-pink-500/25 text-pink-300 font-bold flex items-center justify-center shrink-0 text-[11px] mt-0.5">
+                      3
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">
+                        Paste your copied link below & click{' '}
+                        <span className="text-pink-400 font-bold">“Sync Approved Events”</span>
+                      </p>
+                      <p className="text-white/60 text-[11px] mt-0.5">
+                        SideQuest will automatically import only your confirmed tickets and build your schedule!
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Input field */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-white/80 block">
-                  Private Luma Calendar Subscription URL
-                </label>
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white/90 block">
+                    Paste Luma Calendar URL:
+                  </label>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText()
+                        if (text) setCalendarUrl(text.trim())
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="text-[11px] text-pink-400 hover:text-pink-300 font-semibold flex items-center gap-1"
+                  >
+                    <ClipboardPaste size={12} />
+                    <span>Paste from Clipboard</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type="url"
-                    placeholder="webcal://api.lu.ma/ics/get?entity=user&token=..."
+                    placeholder="https://api2.luma.com/ics/get?entity=user&id=icssk-..."
                     value={calendarUrl}
                     onChange={e => setCalendarUrl(e.target.value)}
                     className="w-full px-4 h-11 rounded-xl text-xs font-mono outline-none transition-all pr-10"
                     style={{
                       background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.12)',
+                      border: '1px solid rgba(255,255,255,0.15)',
                       color: '#ffffff',
                     }}
                   />
@@ -290,6 +414,7 @@ export function LumaConnectModal({ isOpen, onClose, onSuccess }: LumaConnectModa
                   )}
                 </div>
               </div>
+
 
               {/* Error display */}
               {error && (

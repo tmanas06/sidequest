@@ -15,7 +15,10 @@ import {
   CheckCircle2,
   Calendar,
   Unlink,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
+
 import {
   getLumaConnection,
   disconnectLuma,
@@ -150,12 +153,52 @@ export default function SchedulePage() {
   }, [lumaState.events])
 
 
-  const conflicts = useMemo(() => detectConflicts(scheduleEvents), [scheduleEvents])
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
+  const [pastRange, setPastRange] = useState<'week' | 'all'>('week')
+
+  const { upcomingEvents, pastEvents, displayedEvents } = useMemo(() => {
+    const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    const oneWeekAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000
+
+    const upcoming: ScheduleEvent[] = []
+    const past: ScheduleEvent[] = []
+
+    for (const ev of scheduleEvents) {
+      const d = new Date(ev.start_at)
+      const dayKey = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+      if (dayKey >= todayKey) {
+        upcoming.push(ev)
+      } else {
+        past.push(ev)
+      }
+    }
+
+    // Sort upcoming ascending (soonest first)
+    upcoming.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+
+    // Sort past descending (most recent first)
+    past.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime())
+
+    let displayed = upcoming
+    if (activeTab === 'past') {
+      displayed = pastRange === 'week'
+        ? past.filter(ev => new Date(ev.start_at).getTime() >= oneWeekAgoMs)
+        : past
+    }
+
+    return {
+      upcomingEvents: upcoming,
+      pastEvents: past,
+      displayedEvents: displayed,
+    }
+  }, [scheduleEvents, activeTab, pastRange])
+
+  const conflicts = useMemo(() => detectConflicts(upcomingEvents), [upcomingEvents])
 
   // Group events by day
   const groupedByDay = useMemo(() => {
     const map = new Map<string, { label: string; items: ScheduleEvent[] }>()
-    for (const ev of scheduleEvents) {
+    for (const ev of displayedEvents) {
       const d = new Date(ev.start_at)
       const dayKey = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
       const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
@@ -174,7 +217,7 @@ export default function SchedulePage() {
       map.get(dayKey)!.items.push(ev)
     }
     return Array.from(map.entries()).map(([key, val]) => ({ key, ...val }))
-  }, [scheduleEvents])
+  }, [displayedEvents])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:pb-12 animate-fade-in">
@@ -289,11 +332,154 @@ export default function SchedulePage() {
               <span>Connect Luma Account</span>
             </button>
           </div>
+
+          {/* Visual Step-by-Step Guide with Real Screenshots */}
+          <div className="mt-8 pt-6 border-t border-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                  <Sparkles size={14} className="text-pink-400" />
+                  <span>How to Find Your Private Luma Calendar Link (Visual Guide)</span>
+                </h3>
+                <p className="text-xs text-white/60 mt-0.5">
+                  Follow these 2 steps on Luma to get your personal subscription URL:
+                </p>
+              </div>
+
+              <a
+                href="https://lu.ma/settings"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 transition-colors"
+              >
+                <span>Open lu.ma/settings</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Step 1 Card */}
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-pink-500/30 text-pink-300 font-bold flex items-center justify-center text-xs">
+                    1
+                  </span>
+                  <p className="font-semibold text-xs text-white">
+                    Settings ➔ Account ➔ Click "Add iCal Subscription"
+                  </p>
+                </div>
+                <p className="text-[11px] text-white/60">
+                  Open your Luma Account Settings, scroll to <strong>Account Syncing</strong>, and tap <strong>Add iCal Subscription</strong>.
+                </p>
+                <div className="rounded-lg overflow-hidden border border-white/10 bg-slate-950">
+                  <img
+                    src="/guides/luma-step1-account-syncing.png"
+                    alt="Luma Account Settings - Calendar Syncing button"
+                    className="w-full object-cover h-36 hover:h-60 transition-all duration-300 cursor-pointer"
+                  />
+                  <div className="p-1.5 bg-black/80 text-[10px] text-pink-300/80 font-medium text-center">
+                    Step 1: Click "Add iCal Subscription"
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 Card */}
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-pink-500/30 text-pink-300 font-bold flex items-center justify-center text-xs">
+                    2
+                  </span>
+                  <p className="font-semibold text-xs text-white">
+                    In popup, click "Copy URL to Clipboard"
+                  </p>
+                </div>
+                <p className="text-[11px] text-white/60">
+                  At the bottom of the Luma popup (below the Google/Apple buttons), click <strong>Copy URL to Clipboard</strong>.
+                </p>
+                <div className="rounded-lg overflow-hidden border border-white/10 bg-slate-950">
+                  <img
+                    src="/guides/luma-step2-copy-clipboard.png"
+                    alt="Luma Add iCal Subscription modal - Copy URL link"
+                    className="w-full object-cover h-36 hover:h-60 transition-all duration-300 cursor-pointer"
+                  />
+                  <div className="p-1.5 bg-black/80 text-[10px] text-emerald-400 font-medium text-center">
+                    Step 2: Click "Copy URL to Clipboard"
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setShowConnectModal(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white shadow-lg transition-all hover:scale-105"
+                style={{ background: 'linear-gradient(135deg, #eb3471 0%, #fa709a 100%)' }}
+              >
+                <Ticket size={14} />
+                <span>Ready? Paste Link & Sync Approved Events</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Tabs & Controls */}
+      {scheduleEvents.length > 0 && (
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10 gap-4 flex-wrap">
+          {/* Tabs */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('upcoming')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'upcoming'
+                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                  : 'bg-white/5 hover:bg-white/10 text-white/70'
+              }`}
+            >
+              <Calendar size={13} />
+              <span>Upcoming ({upcomingEvents.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'past'
+                  ? 'bg-gradient-to-r from-brand to-purple-600 text-white shadow-md'
+                  : 'bg-white/5 hover:bg-white/10 text-white/70'
+              }`}
+            >
+              <Clock size={13} />
+              <span>Past Events ({pastEvents.length})</span>
+            </button>
+          </div>
+
+          {/* Past Range Filter */}
+          {activeTab === 'past' && pastEvents.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs bg-white/5 p-1 rounded-lg border border-white/10">
+              <span className="text-[11px] text-white/50 px-2">Show:</span>
+              <button
+                onClick={() => setPastRange('week')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  pastRange === 'week' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                Past 7 Days
+              </button>
+              <button
+                onClick={() => setPastRange('all')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  pastRange === 'all' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                All ({pastEvents.length})
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Conflict Warnings */}
-      {conflicts.size > 0 && (
+      {activeTab === 'upcoming' && conflicts.size > 0 && (
         <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
           <AlertTriangle size={16} className="text-amber-400 shrink-0" />
           <span>
@@ -326,6 +512,16 @@ export default function SchedulePage() {
               <span>Explore All Events</span>
             </Link>
           </div>
+        </div>
+      ) : displayedEvents.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+          <CalendarDays size={36} className="mx-auto mb-2 opacity-30 text-brand" />
+          <p className="text-sm font-semibold text-white">No {activeTab} approved events found</p>
+          <p className="text-xs text-white/60 mt-1">
+            {activeTab === 'past' && pastRange === 'week'
+              ? 'No events in the past 7 days. Switch to "All" to see earlier events.'
+              : 'All your confirmed registrations starting today onwards will appear here.'}
+          </p>
         </div>
       ) : (
         /* Timeline of Approved Events Grouped by Day */

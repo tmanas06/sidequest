@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Search, SlidersHorizontal, X, Zap, ChevronDown, RotateCcw, ArrowUpDown, CalendarDays, Clock, Ticket } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Zap, ChevronDown, RotateCcw, ArrowUpDown, CalendarDays, Clock, Ticket, ExternalLink } from 'lucide-react'
 import { EventCard, EventCardSkeleton } from '@/components/event-card'
 import type { Database, EventCategory, BlockchainEcosystem } from '@/lib/supabase/database.types'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
@@ -349,13 +349,48 @@ export default function DiscoverPage() {
             Discover side events, hackathons, meetups, and more — all in one place.
           </p>
 
+          {/* Sourced Luma Calendars */}
+          <div className="mt-3 flex items-center justify-center gap-2 flex-wrap text-xs">
+            <span style={{ color: 'var(--color-text-muted)' }}>Consolidated from:</span>
+            <a
+              href="https://lu.ma/ibw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium transition-colors"
+              style={{
+                background: 'rgba(108,141,248,0.12)',
+                color: 'var(--color-brand-light)',
+                border: '1px solid rgba(108,141,248,0.25)',
+              }}
+            >
+              <span>lu.ma/ibw</span>
+              <ExternalLink size={10} className="opacity-75" />
+            </a>
+            <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+            <a
+              href="https://lu.ma/Devcon8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium transition-colors"
+              style={{
+                background: 'rgba(167,139,250,0.12)',
+                color: '#d8b4fe',
+                border: '1px solid rgba(167,139,250,0.25)',
+              }}
+            >
+              <span>lu.ma/Devcon8</span>
+              <ExternalLink size={10} className="opacity-75" />
+            </a>
+          </div>
+
           {total > 0 && (
-            <p className="mt-3 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
               {total} {activeTab === 'upcoming' ? 'upcoming side events' : 'past side events'} found
             </p>
           )}
         </div>
       </div>
+
 
       {/* Live & Upcoming vs Past Events Tabs */}
       <div className="flex items-center gap-3 mb-6 border-b border-white/[0.08] pb-4 flex-wrap">
