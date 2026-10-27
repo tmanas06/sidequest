@@ -234,7 +234,15 @@ async function handleLumaSync(calendarUrl?: string | null, demo = false) {
       )
     }
 
-    const parsedEvents = parseUserIcs(icsContent)
+    const rawParsedEvents = parseUserIcs(icsContent)
+
+    // Filter down to upcoming events (starting from today, plus past 7 days for recent context)
+    // Discard old historical events from 2024 / early 2025 so schedule only contains current itinerary
+    const oneWeekAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000
+    const parsedEvents = rawParsedEvents.filter(ev => {
+      if (!ev.startAt) return false
+      return new Date(ev.startAt).getTime() >= oneWeekAgoMs
+    })
 
     // Match parsed approved events against our database of IBW & Devcon8 events
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

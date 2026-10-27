@@ -221,35 +221,53 @@ export function ScheduleDayGridView({
     setEventAttendance(eventId, next)
   }
 
-  // Collect all distinct days from events
+  const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+
+  // Strictly filter to upcoming approved events starting today onwards
+  const filteredEvents = useMemo(() => {
+    return events.filter(ev => {
+      if (!ev.start_at) return false
+      const dayKey = new Date(ev.start_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+      return dayKey >= todayKey
+    })
+  }, [events, todayKey])
+
+  // Collect all distinct days from upcoming events
   const daysWithEvents = useMemo(() => {
     const set = new Set<string>()
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
       if (ev.start_at) {
         const d = new Date(ev.start_at)
         set.add(d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))
       }
     }
     return Array.from(set).sort()
-  }, [events])
+  }, [filteredEvents])
 
-  const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
-
-  // Initialize selected day
+  // Initialize selected day to today or first upcoming day
   const [selectedDayKey, setSelectedDayKey] = useState<string>(() => {
     if (daysWithEvents.includes(todayKey)) return todayKey
-    const firstUpcoming = daysWithEvents.find(k => k >= todayKey)
-    if (firstUpcoming) return firstUpcoming
     return daysWithEvents[0] || todayKey
   })
 
+  // Keep selectedDayKey valid and anchored to upcoming events
+  useEffect(() => {
+    if (daysWithEvents.length > 0 && (!selectedDayKey || !daysWithEvents.includes(selectedDayKey))) {
+      if (daysWithEvents.includes(todayKey)) {
+        setSelectedDayKey(todayKey)
+      } else {
+        setSelectedDayKey(daysWithEvents[0])
+      }
+    }
+  }, [daysWithEvents, todayKey, selectedDayKey])
+
   // Group events by day
   const allDayEvents = useMemo(() => {
-    return events.filter(ev => {
+    return filteredEvents.filter(ev => {
       const d = new Date(ev.start_at)
       return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === selectedDayKey
     })
-  }, [events, selectedDayKey])
+  }, [filteredEvents, selectedDayKey])
 
   // Filter day events based on Going/Not Going filter
   const displayedDayEvents = useMemo(() => {

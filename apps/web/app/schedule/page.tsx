@@ -306,12 +306,12 @@ export default function SchedulePage() {
             {lumaState.isConnected && (
               <span className="px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 flex items-center gap-1.5">
                 <CheckCircle2 size={12} className="text-[#10B981]" />
-                <span>Luma Synced ({scheduleEvents.length} Approved)</span>
+                <span>Luma Synced ({upcomingEvents.length} Upcoming Approved)</span>
               </span>
             )}
           </div>
           <p className="text-sm mt-1 text-[#9298A3]">
-            Personalized agenda displaying confirmed registrations and approved tickets.
+            Personalized agenda displaying confirmed upcoming registrations and approved tickets.
           </p>
         </div>
 
@@ -531,12 +531,12 @@ export default function SchedulePage() {
 
       {viewMode === 'day' ? (
         <ScheduleDayGridView
-          events={scheduleEvents}
+          events={upcomingEvents}
           conflicts={conflicts}
           onAddEventClick={() => setShowAddModal(true)}
         />
       ) : viewMode === 'month' ? (
-        <ScheduleCalendarView events={scheduleEvents} conflicts={conflicts} />
+        <ScheduleCalendarView events={upcomingEvents} conflicts={conflicts} />
       ) : (
         <>
           {/* Tabs & Controls */}
