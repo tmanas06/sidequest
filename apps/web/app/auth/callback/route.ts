@@ -38,6 +38,15 @@ export async function GET(request: NextRequest) {
         new URL(`/auth/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
       )
     }
+
+    // Clean up any stale or orphaned auth token chunk cookies from request
+    const newCookieNames = new Set(supabaseResponse.cookies.getAll().map(c => c.name))
+    request.cookies.getAll().forEach(c => {
+      if (c.name.startsWith('sb-') && !newCookieNames.has(c.name)) {
+        supabaseResponse.cookies.delete(c.name)
+      }
+    })
+
     return supabaseResponse
   }
 
