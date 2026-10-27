@@ -141,14 +141,6 @@ export async function GET(req: NextRequest) {
     dataset = dataset.filter(e => e.source_attribution?.toLowerCase().includes(source.toLowerCase()))
   }
 
-  // Exact date filtering (e.g. '2026-11-03')
-  if (dateExact) {
-    dataset = dataset.filter(e => {
-      if (!e.start_at) return false
-      return e.start_at.slice(0, 10) === dateExact
-    })
-  }
-
   if (dateFrom) {
     const fromTime = new Date(dateFrom).getTime()
     dataset = dataset.filter(e => new Date(e.start_at || 0).getTime() >= fromTime)
@@ -159,7 +151,7 @@ export async function GET(req: NextRequest) {
     dataset = dataset.filter(e => new Date(e.start_at || 0).getTime() <= toTime)
   }
 
-  // Calculate upcoming vs past counts based on the active query/category/ecosystem filters
+  // Calculate upcoming vs past counts based on the active query/category/ecosystem filters (across all dates)
   const upcomingEvents = dataset.filter(e => {
     const s = new Date(e.start_at || 0).getTime()
     const end = e.end_at ? new Date(e.end_at).getTime() : s
@@ -192,14 +184,29 @@ export async function GET(req: NextRequest) {
     : allPastEvents.length
   const pastAllCount = allPastEvents.length
 
+  // Build date counts for the active tab across all dates so the date selector rail is never truncated
+  const activeTabSet = tab === 'past'
+    ? (pastRange === 'week' ? pastWeekEvents : pastRange === 'month' ? pastMonthEvents : allPastEvents)
+    : upcomingEvents
+
+  const dateCounts: Record<string, number> = {}
+  for (const ev of activeTabSet) {
+    if (ev.start_at) {
+      const d = ev.start_at.slice(0, 10)
+      dateCounts[d] = (dateCounts[d] || 0) + 1
+    }
+  }
+
   // Tab partition
-  let displayed = dataset
-  if (tab === 'upcoming') {
-    displayed = upcomingEvents
-  } else if (tab === 'past') {
-    if (pastRange === 'week') displayed = pastWeekEvents
-    else if (pastRange === 'month') displayed = pastMonthEvents
-    else displayed = allPastEvents
+  let displayed = tab === 'upcoming'
+    ? [...upcomingEvents]
+    : tab === 'past'
+    ? (pastRange === 'week' ? [...pastWeekEvents] : pastRange === 'month' ? [...pastMonthEvents] : [...allPastEvents])
+    : [...dataset]
+
+  // Filter displayed events by single exact date if chosen
+  if (dateExact) {
+    displayed = displayed.filter(e => e.start_at?.slice(0, 10) === dateExact)
   }
 
   // Sort
@@ -218,6 +225,7 @@ export async function GET(req: NextRequest) {
     upcomingCount,
     pastCount,
     pastAllCount,
+    dateCounts,
     page,
     limit,
     pages: Math.max(1, Math.ceil(total / limit)),

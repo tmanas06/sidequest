@@ -29,6 +29,7 @@ interface EventsResponse {
   upcomingCount?: number
   pastCount?: number
   pastAllCount?: number
+  dateCounts?: Record<string, number>
   page: number
   limit: number
   pages: number
@@ -68,6 +69,7 @@ export default function DiscoverPage() {
   const [total, setTotal] = useState(0)
   const [upcomingCount, setUpcomingCount] = useState(0)
   const [pastCount, setPastCount] = useState(0)
+  const [dateCounts, setDateCounts] = useState<Record<string, number>>({})
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
   const [pastRange, setPastRange] = useState<'week' | 'month' | 'all'>('all')
   const [pages, setPages] = useState(1)
@@ -197,6 +199,7 @@ export default function DiscoverPage() {
       setTotal(data.total || 0)
       if (data.upcomingCount !== undefined) setUpcomingCount(data.upcomingCount)
       if (data.pastCount !== undefined) setPastCount(data.pastCount)
+      if (data.dateCounts) setDateCounts(data.dateCounts)
       setPages(data.pages || 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load events')
@@ -218,16 +221,9 @@ export default function DiscoverPage() {
     )
   }, [events, onlyApproved, approvedSet])
 
-  // Relevant dates selector dynamically generated from event dates
+  // Relevant dates selector dynamically generated from API dateCounts so date chips persist
   const availableDates = useMemo(() => {
-    // Generate dates based on the active tab's events
-    const dateCounts = new Map<string, number>()
-    for (const ev of events) {
-      if (!ev.start_at) continue
-      const dateStr = ev.start_at.slice(0, 10)
-      dateCounts.set(dateStr, (dateCounts.get(dateStr) || 0) + 1)
-    }
-    return Array.from(dateCounts.entries())
+    return Object.entries(dateCounts)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([dateStr, count]) => {
         const [y, m, d] = dateStr.split('-').map(Number)
@@ -240,7 +236,7 @@ export default function DiscoverPage() {
           count,
         }
       })
-  }, [events])
+  }, [dateCounts])
 
   const clearAllFilters = () => {
     setQuery('')
@@ -412,7 +408,7 @@ export default function DiscoverPage() {
           <div className="flex items-center justify-between text-xs text-[#9298A3] font-mono mb-1">
             <span>Filter by Event Date:</span>
             <span>
-              Showing <span className="text-[#F5F5F0] font-semibold">{displayedEvents.length}</span> of {total} events
+              Showing <span className="text-[#F5F5F0] font-semibold">{displayedEvents.length}</span> of {activeTab === 'past' ? pastCount : upcomingCount} events
             </span>
           </div>
 
@@ -428,7 +424,7 @@ export default function DiscoverPage() {
             >
               <span className="text-[10px] text-[#5A6270]">ALL</span>
               <span className="text-xs font-bold text-[#F5F5F0]">Dates</span>
-              <span className="text-[9px] text-[#9298A3] mt-0.5">{total}</span>
+              <span className="text-[9px] text-[#9298A3] mt-0.5">{activeTab === 'past' ? pastCount : upcomingCount}</span>
             </button>
 
             {/* Individual Available Event Dates */}
