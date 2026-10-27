@@ -122,23 +122,33 @@ function parseUserIcs(icsText: string): ParsedLumaEvent[] {
   return events
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const urlParam = req.nextUrl.searchParams.get('url') || req.nextUrl.searchParams.get('calendarUrl')
+  if (urlParam) {
+    return handleLumaSync(urlParam, false)
+  }
+
   return NextResponse.json({
     status: 'ok',
     description: 'Connect Luma account calendar feed to sync approved events only.',
     instructions: [
       '1. Open https://lu.ma/calendar or your Luma profile -> Settings -> Calendar Sync.',
       '2. Copy your private "Subscribe to Calendar" URL (starts with webcal://api.lu.ma/... or https://api.lu.ma/...).',
-      '3. POST to /api/luma/sync with { "calendarUrl": "<YOUR_URL>" }.',
+      '3. POST to /api/luma/sync with { "calendarUrl": "<YOUR_URL>" } or GET /api/luma/sync?url=<YOUR_URL>.',
       '4. Only confirmed and approved tickets are returned in your personalized schedule.',
     ],
   })
 }
 
 export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}))
+  const { calendarUrl, demo = false, useSample } = body
+  return handleLumaSync(calendarUrl, demo || (!calendarUrl && useSample))
+}
+
+async function handleLumaSync(calendarUrl?: string | null, demo = false) {
   try {
-    const body = await req.json().catch(() => ({}))
-    const { calendarUrl, demo = false } = body
+    const body = {} as any
 
     // Sample demo mode for quick testing
     if (demo || (!calendarUrl && body.useSample)) {
@@ -184,9 +194,13 @@ export async function POST(req: NextRequest) {
       targetUrl = 'https://' + targetUrl
     }
 
+    if (targetUrl.includes('api.luma.com')) {
+      targetUrl = targetUrl.replace('api.luma.com', 'api.lu.ma')
+    }
+
     // Fetch the private Luma ICS feed with timeout
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 8000)
+    const timer = setTimeout(() => controller.abort(), 15000)
 
     let icsContent = ''
     try {

@@ -221,8 +221,19 @@ export function syncUserLuma(user: any): LumaConnectionState {
     return local
   }
 
-  // 2. If local is empty, but cloud has previously saved calendarUrl, restore by fetching tickets in background
+  // 2. If cloud has previously saved calendarUrl, immediately mark as connected so UI never asks again!
   if (cloudConn && cloudConn.isConnected && cloudConn.calendarUrl) {
+    const optimisticState: LumaConnectionState = {
+      isConnected: true,
+      calendarUrl: cloudConn.calendarUrl,
+      syncedAt: cloudConn.syncedAt,
+      approvedCount: cloudConn.approvedCount || 0,
+      events: local.events || [],
+      accountLabel: cloudConn.accountLabel || 'Luma User',
+      userId: user.id,
+    }
+
+    // Restore tickets from feed in background
     fetch(`/api/luma/sync?url=${encodeURIComponent(cloudConn.calendarUrl)}`)
       .then(res => res.json())
       .then(data => {
@@ -240,6 +251,8 @@ export function syncUserLuma(user: any): LumaConnectionState {
         }
       })
       .catch(() => {})
+
+    return optimisticState
   }
 
   return local

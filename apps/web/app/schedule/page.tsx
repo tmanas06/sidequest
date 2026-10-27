@@ -25,6 +25,7 @@ import {
   getLumaConnection,
   disconnectLuma,
   setActiveUserId,
+  getActiveUserId,
   syncUserLuma,
   type LumaConnectionState,
   type ApprovedLumaTicket,
@@ -122,10 +123,19 @@ function exportApprovedIcs(events: ScheduleEvent[]) {
 export default function SchedulePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentUser, setCurrentUser] = useState<any>(null)
-  const [lumaState, setLumaState] = useState<LumaConnectionState>({
-    isConnected: false,
-    approvedCount: 0,
-    events: [],
+  const [lumaState, setLumaState] = useState<LumaConnectionState>(() => {
+    if (typeof window !== 'undefined') {
+      const activeId = getActiveUserId()
+      const local = getLumaConnection(activeId)
+      if (local.isConnected && (local.calendarUrl || local.events.length > 0)) {
+        return local
+      }
+    }
+    return {
+      isConnected: false,
+      approvedCount: 0,
+      events: [],
+    }
   })
   const [showConnectModal, setShowConnectModal] = useState(false)
 
@@ -353,10 +363,12 @@ export default function SchedulePage() {
             </div>
             <div>
               <p className="font-semibold text-xs md:text-sm text-[#F5F5F0]">
-                Connected: {lumaState.accountLabel || 'Personal Luma Calendar'}
+                Connected: {lumaState.accountLabel || 'Personal Luma Calendar'} {lumaState.approvedCount > 0 ? `(${lumaState.approvedCount} approved tickets)` : ''}
               </p>
               <p className="text-[11px] text-[#9298A3]">
-                Filtering strictly for approved tickets. Waitlisted and pending events are withheld until confirmed.
+                {lumaState.events.length === 0
+                  ? 'Loading your confirmed tickets from your synced calendar in the background…'
+                  : 'Filtering strictly for approved tickets. Waitlisted and pending events are withheld until confirmed.'}
               </p>
             </div>
           </div>
