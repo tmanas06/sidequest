@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { User, Mail, Calendar, Users, LogOut, Shield, ExternalLink, Ticket } from 'lucide-react'
+import { ProfileLumaCard } from '@/components/profile-luma-card'
 
 export const metadata: Metadata = { title: 'Profile' }
 export const dynamic = 'force-dynamic'
@@ -27,13 +28,13 @@ export default async function ProfilePage() {
   const initialLetter = profile?.display_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 pb-24 md:pb-12 animate-fade-in">
-      <h1 className="text-2xl font-semibold tracking-tight text-[#F5F5F0] mb-6">
+    <div className="max-w-2xl mx-auto px-4 py-8 pb-24 md:pb-12 animate-fade-in space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight text-[#F5F5F0]">
         Account Profile
       </h1>
 
       {/* Profile card */}
-      <div className="rounded-xl p-6 mb-6 bg-[#14171C] border border-[#292E36] space-y-6">
+      <div className="rounded-xl p-6 bg-[#14171C] border border-[#292E36] space-y-6">
         <div className="flex items-center gap-4">
           {/* Avatar */}
           <div className="w-14 h-14 rounded-xl bg-[#191D24] border border-[#292E36] flex items-center justify-center text-xl font-bold font-mono text-[#C6F36B] shrink-0">
@@ -102,6 +103,12 @@ export default async function ProfilePage() {
           </span>
         </div>
       </div>
+
+      {/* Connected Luma Calendar Section */}
+      <ProfileLumaCard
+        userId={user.id}
+        initialState={user.user_metadata?.luma_connection}
+      />
 
       {/* Sign out */}
       <form action="/auth/signout" method="POST">
