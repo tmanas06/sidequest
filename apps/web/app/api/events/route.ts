@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const dateFrom = searchParams.get('dateFrom') || ''
   const dateTo = searchParams.get('dateTo') || ''
   const tab = searchParams.get('tab') || 'upcoming' // 'upcoming' | 'past' | 'all'
-  const pastRange = searchParams.get('pastRange') || 'all' // 'all' | 'week' | 'month'
+  const pastRange = searchParams.get('pastRange') || 'week' // default to 'week' (last week's completed events)
   const sort = searchParams.get('sort') || (tab === 'past' ? 'date_desc' : 'date_asc')
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
@@ -27,7 +27,9 @@ export async function GET(req: NextRequest) {
 
   // Current timestamp references (Asia/Kolkata timezone context)
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const kolkataFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const todayKolkataStr = kolkataFormatter.format(now) // e.g. "2026-10-27"
+  const todayStart = new Date(`${todayKolkataStr}T00:00:00+05:30`).getTime()
   const oneWeekAgo = todayStart - 7 * 24 * 60 * 60 * 1000
   const oneMonthAgo = todayStart - 30 * 24 * 60 * 60 * 1000
 
@@ -152,28 +154,30 @@ export async function GET(req: NextRequest) {
   }
 
   // Calculate upcoming vs past counts based on the active query/category/ecosystem filters (across all dates)
+  // Upcoming events strictly start from today onwards (excludes events that started in the past)
   const upcomingEvents = dataset.filter(e => {
     const s = new Date(e.start_at || 0).getTime()
-    const end = e.end_at ? new Date(e.end_at).getTime() : s
-    return s >= todayStart || end >= todayStart
+    return s >= todayStart
   })
 
+  // Past events must have completed before today
   const allPastEvents = dataset.filter(e => {
     const s = new Date(e.start_at || 0).getTime()
     const end = e.end_at ? new Date(e.end_at).getTime() : s
     return s < todayStart && end < todayStart
   })
 
+  // Last week's completed events (ended in last 7 days)
   const pastWeekEvents = allPastEvents.filter(e => {
     const s = new Date(e.start_at || 0).getTime()
-    const end = e.end_at ? new Date(e.end_at).getTime() : s
-    return s >= oneWeekAgo || end >= oneWeekAgo
+    const end = e.end_at ? new Date(e.end_at).getTime() : (s + 2 * 3600 * 1000)
+    return end < todayStart && (s >= oneWeekAgo || end >= oneWeekAgo)
   })
 
   const pastMonthEvents = allPastEvents.filter(e => {
     const s = new Date(e.start_at || 0).getTime()
-    const end = e.end_at ? new Date(e.end_at).getTime() : s
-    return s >= oneMonthAgo || end >= oneMonthAgo
+    const end = e.end_at ? new Date(e.end_at).getTime() : (s + 2 * 3600 * 1000)
+    return end < todayStart && (s >= oneMonthAgo || end >= oneMonthAgo)
   })
 
   const upcomingCount = upcomingEvents.length

@@ -71,7 +71,7 @@ export default function DiscoverPage() {
   const [pastCount, setPastCount] = useState(0)
   const [dateCounts, setDateCounts] = useState<Record<string, number>>({})
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
-  const [pastRange, setPastRange] = useState<'week' | 'month' | 'all'>('all')
+  const [pastRange, setPastRange] = useState<'week' | 'all'>('week')
   const [pages, setPages] = useState(1)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -188,7 +188,7 @@ export default function DiscoverPage() {
       if (source) params.set('source', source)
       if (selectedDate) params.set('date', selectedDate)
       params.set('tab', activeTab)
-      if (activeTab === 'past') params.set('pastRange', pastRange)
+      params.set('pastRange', pastRange)
       params.set('page', String(page))
       params.set('limit', '50')
 
@@ -325,6 +325,27 @@ export default function DiscoverPage() {
               </span>
             </button>
           </div>
+
+          {activeTab === 'past' && (
+            <div className="flex items-center bg-[#101318] p-0.5 rounded border border-[#292E36] text-[11px] font-mono shrink-0">
+              <button
+                onClick={() => { setPastRange('week'); setSelectedDate(''); setPage(1); }}
+                className={`px-2 py-1 rounded transition-colors ${
+                  pastRange === 'week' ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36]' : 'text-[#9298A3] hover:text-[#F5F5F0]'
+                }`}
+              >
+                Last Week
+              </button>
+              <button
+                onClick={() => { setPastRange('all'); setSelectedDate(''); setPage(1); }}
+                className={`px-2 py-1 rounded transition-colors ${
+                  pastRange === 'all' ? 'bg-[#191D24] text-[#F5F5F0] border border-[#292E36]' : 'text-[#9298A3] hover:text-[#F5F5F0]'
+                }`}
+              >
+                All History
+              </button>
+            </div>
+          )}
 
           {/* Luma Approved Only Toggle */}
           <button
