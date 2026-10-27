@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Ticket, Copy, Check, ExternalLink, RefreshCw, Unlink, Link2 } from 'lucide-react'
-import { getLumaConnection, disconnectLuma, type LumaConnectionState } from '@/lib/luma-storage'
+import { getLumaConnection, disconnectLuma, resyncLumaFeed, type LumaConnectionState } from '@/lib/luma-storage'
 import { LumaConnectModal } from '@/components/luma-connect-modal'
 
 interface ProfileLumaCardProps {
@@ -28,6 +28,33 @@ export function ProfileLumaCard({ userId, initialState }: ProfileLumaCardProps) 
 
   const [copied, setCopied] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [isResyncing, setIsResyncing] = useState(false)
+  const [resyncFeedback, setResyncFeedback] = useState<string | null>(null)
+
+  const handleLiveResync = async () => {
+    if (!lumaState.calendarUrl) {
+      setShowModal(true)
+      return
+    }
+    setIsResyncing(true)
+    setResyncFeedback(null)
+    try {
+      const res = await resyncLumaFeed(lumaState.calendarUrl, userId)
+      if (res.success && res.state) {
+        setLumaState(res.state)
+        setResyncFeedback(`Synced ${res.state.events.length} tickets!`)
+        setTimeout(() => setResyncFeedback(null), 3000)
+      } else {
+        setResyncFeedback(res.error || 'Failed to re-sync')
+        setTimeout(() => setResyncFeedback(null), 4000)
+      }
+    } catch {
+      setResyncFeedback('Network error')
+      setTimeout(() => setResyncFeedback(null), 4000)
+    } finally {
+      setIsResyncing(false)
+    }
+  }
 
   useEffect(() => {
     const handleSync = (e: Event) => {
@@ -149,22 +176,39 @@ export function ProfileLumaCard({ userId, initialState }: ProfileLumaCardProps) 
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#292E36]/60 text-xs font-mono">
-              <button
-                onClick={() => setShowModal(true)}
-                className="text-[#C6F36B] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw size={12} />
-                <span>Update or Re-sync Feed</span>
-              </button>
+            <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#292E36]/60 text-xs font-mono flex-wrap">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleLiveResync}
+                  disabled={isResyncing}
+                  className="text-[#C6F36B] hover:underline flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  <RefreshCw size={12} className={isResyncing ? 'animate-spin' : ''} />
+                  <span>{isResyncing ? 'Re-syncing Feed…' : 'Re-sync Feed Now'}</span>
+                </button>
+                {resyncFeedback && (
+                  <span className="text-[11px] text-[#10B981] font-sans">
+                    {resyncFeedback}
+                  </span>
+                )}
+              </div>
 
-              <button
-                onClick={handleDisconnect}
-                className="text-[#EF4444] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Unlink size={12} />
-                <span>Disconnect Feed</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="text-[#9298A3] hover:text-[#F5F5F0] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Change Link</span>
+                </button>
+
+                <button
+                  onClick={handleDisconnect}
+                  className="text-[#EF4444] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Unlink size={12} />
+                  <span>Disconnect</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : lumaState.isConnected && !lumaState.calendarUrl ? (

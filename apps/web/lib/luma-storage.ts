@@ -309,3 +309,51 @@ export function setEventAttendance(
     return {}
   }
 }
+
+/**
+ * Actively triggers a live re-sync of the user's Luma feed.
+ * Updates local storage, Supabase user events, and dispatches the sync event.
+ */
+export async function resyncLumaFeed(
+  calendarUrl?: string | null,
+  userId?: string | null
+): Promise<{ success: boolean; state?: LumaConnectionState; error?: string }> {
+  try {
+    const activeId = userId !== undefined ? userId : getActiveUserId()
+    const current = getLumaConnection(activeId)
+    const targetUrl = calendarUrl || current.calendarUrl
+
+    if (!targetUrl) {
+      return { success: false, error: 'No calendar URL configured to re-sync.' }
+    }
+
+    const res = await fetch('/api/luma/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ calendarUrl: targetUrl.trim() }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Failed to re-sync Luma calendar' }
+    }
+
+    const updatedState: LumaConnectionState = {
+      isConnected: true,
+      calendarUrl: targetUrl.trim(),
+      syncedAt: data.syncedAt || new Date().toISOString(),
+      approvedCount: data.approvedCount || data.events?.length || 0,
+      events: data.events || [],
+      accountLabel: data.account || current.accountLabel || 'My Luma Account',
+      userId: activeId,
+    }
+
+    saveLumaConnection(updatedState, activeId)
+    return { success: true, state: updatedState }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Network error re-syncing Luma feed',
+    }
+  }
+}

@@ -27,6 +27,7 @@ import {
   setActiveUserId,
   getActiveUserId,
   syncUserLuma,
+  resyncLumaFeed,
   type LumaConnectionState,
   type ApprovedLumaTicket,
 } from '@/lib/luma-storage'
@@ -138,6 +139,40 @@ export default function SchedulePage() {
     }
   })
   const [showConnectModal, setShowConnectModal] = useState(false)
+  const [isResyncing, setIsResyncing] = useState(false)
+  const [resyncNotice, setResyncNotice] = useState<string | null>(null)
+
+  const handleLiveResync = async () => {
+    if (!lumaState.calendarUrl) {
+      setShowConnectModal(true)
+      return
+    }
+    setIsResyncing(true)
+    setResyncNotice(null)
+    try {
+      const res = await resyncLumaFeed(lumaState.calendarUrl, currentUser?.id)
+      if (res.success && res.state) {
+        setLumaState(res.state)
+        setResyncNotice(`Synced ${res.state.events.length} confirmed tickets!`)
+        setTimeout(() => setResyncNotice(null), 3000)
+      } else {
+        setResyncNotice(res.error || 'Failed to re-sync feed')
+        setTimeout(() => setResyncNotice(null), 4000)
+      }
+    } catch (e: any) {
+      setResyncNotice(e?.message || 'Error syncing')
+      setTimeout(() => setResyncNotice(null), 4000)
+    } finally {
+      setIsResyncing(false)
+    }
+  }
+
+  // If connected but tickets are empty in local storage, trigger live resync automatically
+  useEffect(() => {
+    if (lumaState.isConnected && lumaState.events.length === 0 && lumaState.calendarUrl && !isResyncing) {
+      handleLiveResync()
+    }
+  }, [lumaState.isConnected, lumaState.events.length, lumaState.calendarUrl])
 
   useEffect(() => {
     const handleSync = (e: Event) => {
@@ -374,16 +409,22 @@ export default function SchedulePage() {
           </div>
 
           <div className="flex items-center gap-2 text-xs">
+            {resyncNotice && (
+              <span className="text-[11px] font-mono text-[#C6F36B] px-2 py-0.5 rounded bg-[#C6F36B]/10 border border-[#C6F36B]/20">
+                {resyncNotice}
+              </span>
+            )}
             <button
-              onClick={() => setShowConnectModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] font-medium transition-colors"
+              onClick={handleLiveResync}
+              disabled={isResyncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
-              <RefreshCw size={12} />
-              <span>Re-sync</span>
+              <RefreshCw size={12} className={isResyncing ? 'animate-spin text-[#C6F36B]' : ''} />
+              <span>{isResyncing ? 'Re-syncing…' : 'Re-sync'}</span>
             </button>
             <button
               onClick={() => disconnectLuma(currentUser?.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[#EF4444] hover:bg-[#EF4444]/10 font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[#EF4444] hover:bg-[#EF4444]/10 font-medium transition-colors cursor-pointer"
             >
               <Unlink size={12} />
               <span>Disconnect</span>
@@ -565,26 +606,54 @@ export default function SchedulePage() {
           {/* Empty State */}
           {scheduleEvents.length === 0 ? (
             <div className="text-center py-16 border border-dashed border-[#292E36] rounded-xl bg-[#14171C]/50">
-              <CalendarDays size={36} className="mx-auto mb-3 text-[#9298A3]" />
-              <h3 className="text-base font-semibold text-[#F5F5F0] mb-1">Your next event starts here</h3>
-              <p className="text-xs text-[#9298A3] max-w-sm mx-auto mb-5">
-                Connect your Luma calendar link to display your confirmed tickets, or explore the discover directory.
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setShowConnectModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] transition-colors"
-                >
-                  <Ticket size={13} />
-                  <span>Connect Luma</span>
-                </button>
-                <Link
-                  href="/"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
-                >
-                  <span>Explore Events</span>
-                </Link>
-              </div>
+              {isResyncing ? (
+                <div className="space-y-3">
+                  <RefreshCw size={32} className="mx-auto mb-2 text-[#C6F36B] animate-spin" />
+                  <h3 className="text-base font-semibold text-[#F5F5F0]">Syncing confirmed tickets from Luma…</h3>
+                  <p className="text-xs text-[#9298A3] max-w-sm mx-auto">
+                    Fetching your personal calendar subscription feed and isolating your approved tickets.
+                  </p>
+                </div>
+              ) : lumaState.isConnected ? (
+                <div className="space-y-3">
+                  <Ticket size={32} className="mx-auto mb-2 text-[#C6F36B]" />
+                  <h3 className="text-base font-semibold text-[#F5F5F0]">Ready to load confirmed tickets</h3>
+                  <p className="text-xs text-[#9298A3] max-w-sm mx-auto">
+                    Your Luma feed is connected ({lumaState.approvedCount || 0} tickets on calendar). Click below to fetch your itinerary.
+                  </p>
+                  <button
+                    onClick={handleLiveResync}
+                    disabled={isResyncing}
+                    className="px-4 py-2 rounded-lg text-xs font-semibold bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] transition-colors inline-flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <RefreshCw size={13} className={isResyncing ? 'animate-spin' : ''} />
+                    <span>Sync Approved Tickets Now</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <CalendarDays size={36} className="mx-auto mb-3 text-[#9298A3]" />
+                  <h3 className="text-base font-semibold text-[#F5F5F0] mb-1">Your next event starts here</h3>
+                  <p className="text-xs text-[#9298A3] max-w-sm mx-auto mb-5">
+                    Connect your Luma calendar link to display your confirmed tickets, or explore the discover directory.
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setShowConnectModal(true)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-[#C6F36B] hover:bg-[#B5E85A] text-[#0B0D10] transition-colors"
+                    >
+                      <Ticket size={13} />
+                      <span>Connect Luma</span>
+                    </button>
+                    <Link
+                      href="/"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-[#191D24] hover:bg-[#20252E] text-[#F5F5F0] border border-[#292E36] transition-colors"
+                    >
+                      <span>Explore Events</span>
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
           ) : displayedEvents.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-[#292E36] rounded-xl bg-[#14171C]/50">
